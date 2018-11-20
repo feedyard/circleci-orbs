@@ -1,15 +1,107 @@
 version: 2.1
 
-description: Combined build, publish, and release Docker images to feedyard container registry
+description: Jobs and Commands for building, testing, and publishing standard circleci docker build agents
+
+examples:
+
+  standard_tbd_workflow:
+    description: |
+      A standard TBD circleci docker agent pipeline workflow, where git push triggers build, test, and push
+      Dockerfile is in the root of your repository, image name is same name as your repository, and then
+      pushing to the default docker registry (at quay.io).
+    usage:
+      version: 2.1
+
+      orbs:
+        docker-agents: feedyard/docker-agentsh@1.0.0
+
+      workflows:
+        circleci-remote-docker-image-pipeline:
+          jobs:
+            - docker-agents/publish:
+                filters:
+                  branches:
+                    only: master
+                  tags:
+                    ignore: /.*/
+            - docker-agents/release:
+                filters:
+                  branches:
+                    ignore: /.*/
+                  tags:
+                    only: /.*/
+
+  custom_name_and_tag:
+    description: Build, test, and push docker image with a custom name and tag.
+    usage:
+      version: 2.1
+
+      orbs:
+        docker-agents: feedyard/docker-agentsh@1.0.0
+
+      workflows:
+        build_and_publish_docker_image:
+          jobs:
+          - docker-agents/publish:
+              image: my/image
+              tag: my_tag
+
+  custom_registry_and_dockerfile:
+    description: |
+      Build,test, and push docker image with a non standard Dockerfile and to a
+      custom registry.
+    usage:
+      version: 2.1
+
+      orbs:
+        docker-agents: feedyard/docker-agentsh@1.0.0
+
+      workflows:
+        build_and_publish_docker_image:
+          jobs:
+          - docker-agents/publish:
+              registry: my.docker.registry
+              dockerfile: path/to/MyDockerFile
+
+  life_cycle_hooks:
+    description: |
+      Build, test, and push a docker image with custom lifecycle hooks; before
+      checking out the code from the VCS repository, before building the
+      docker image, and after building the docker image.
+    usage:
+      version: 2.1
+
+      orbs:
+        docker-agents: feedyard/docker-agentsh@1.0.0
+
+      workflows:
+        docker_with_lifecycle:
+          jobs:
+          - docker-agents/publish:
+              after_checkout:
+              - run:
+                  name: Do this after checkout.
+                  command: echo "Did this after checkout"
+              before_build:
+              - run:
+                  name: Do this before the build.
+                  command: echo "Did this before the build"
+              after_build:
+              - run:
+                  name: Do this after the build.
+                  command: echo "Did this after the build"
 
 executors:
+
   circleci-base:
-    description: The docker container to use when running docker-publish commands
+    description: The docker container to use when running docker-agents jobs
     docker:
       - image: quay.io/feedyard/circleci-base-agent
     environment:
       REGISTRY: quay.io
       DOCKERFILE: Dockerfile
+      INSPEC_FOLDER: profiles
+      INSPEC_TEST_CIS: cis-docker
       BASH_ENV: local.env
 
 commands:
@@ -21,20 +113,18 @@ commands:
           name: decrypt secrets
           command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_PIPELINE_KEY
 
-  check:
+  setup-registry:
     description: |
-      Sanity check to make sure you can build a docker image.
-
-        * check that $DOCKER_LOGIN and $DOCKER_PASSWORD environment variables are set
-        * run docker login to ensure that you can push the built image
+      confirm $DOCKER_LOGIN and $DOCKER_PASSWORD environment variables are set
+      run docker login to ensure that you can push the built image
     parameters:
       registry:
-        description: Name of registry to use. Defaults to quay.io.
+        description: Name of registry to use. Defaults to $REGISTRY.
         type: string
         default: $REGISTRY
     steps:
       - run:
-          name: Check Environment Variables
+          name: Check Docker registry environment variables
           command: |
             if [[ -z "${DOCKER_LOGIN}" ]]; then
               echo "DOCKER_LOGIN is not set, will not be able to push image."
@@ -50,7 +140,7 @@ commands:
           command: echo "$DOCKER_PASSWORD" | docker login -u $DOCKER_LOGIN --password-stdin << parameters.registry >>
 
   build:
-    description: Build and SHA1 Tag a Docker Image.
+    description: Build and SHA1 tag docker image.
     parameters:
       dockerfile:
         description: Name of dockerfile to use. Defaults to Dockerfile.
@@ -69,16 +159,54 @@ commands:
         type: string
         default: $CIRCLE_SHA1
       registry:
-        description: Name of registry to use. Defaults to docker.io.
+        description: Name of registry to use. Defaults to $REGISTRY.
         type: string
         default: $REGISTRY
     steps:
       - run:
-          name: Build Docker Image
+          name: Build Docker image
           command: docker build -f << parameters.dockerfile >> -t << parameters.registry >>/<< parameters.image >>:<< parameters.tag >> << parameters.path >>
 
   test:
-    description: Standard docker image CIS and inspec test
+    description: Default InSpec test of CIS Docker_benchmarks and custom container configuration
+    parameters:
+      inspec-folder:
+        description: Name of folder containing inspec tests. Defaults to $INSPEC_FOLDER.
+        type: string
+        default: $INSPEC_FOLDER
+      inspec-test-cis:
+        description: Name of CIS benchmark test. Defaults to $INSPEC_TEST_CIS.
+        type: string
+        default: $INSPEC_TEST_CIS
+      inspec-test-container:
+        description: Name of routine container test. Defaults to $CIRCLE_PROJECT_REPONAME.
+        type: string
+        default: $CIRCLE_PROJECT_REPONAME
+      image:
+        description: Name of image to create. Defaults to a combination of $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.
+        type: string
+        default: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+      tag:
+        description: Value for tag to use. Defaults to $CIRCLE_SHA1.
+        type: string
+        default: $CIRCLE_SHA1
+      registry:
+        description: Name of registry to use. Defaults to $REGISTRY.
+        type: string
+        default: $REGISTRY
+    steps:
+      - run:
+          name: Standard inspec CIS Dockerfile test
+          command: |
+            set -euo pipefail
+            inspec exec --no-distinct-exit $INSPEC_FOLDER/$INSPEC_TEST_CIS
+      - run:
+          name: Standard inspec running container configuration test
+          command: |
+            set -euo pipefail
+            CID="$(docker run -it -d --entrypoint ash << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>)"
+            inspec exec $INSPEC_FOLDER/$CIRCLE_PROJECT_REPONAME/ -t docker://$CID
+            docker rm -f $CID
     
   version-tag:
     description: Pull and version Tag a Docker Image.
@@ -96,7 +224,7 @@ commands:
         type: string
         default: $CIRCLE_TAG
       registry:
-        description: Name of registry to use. Defaults to docker.io.
+        description: Name of registry to use. Defaults to $REGISTRY.
         type: string
         default: $REGISTRY
     steps:
@@ -106,14 +234,14 @@ commands:
       - run:
           name: Version tag Docker Image
           command: |
-            docker tag << parameters.registry >>/<< parameters.image >>:<< parameters.pull-tag >> << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
             docker tag << parameters.registry >>/<< parameters.image >>:<< parameters.pull-tag >> << parameters.registry >>/<< parameters.image >>:latest
+            docker tag << parameters.registry >>/<< parameters.image >>:<< parameters.pull-tag >> << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
 
   deploy:
-    description: Deploy docker image to a registry.
+    description: Deploy docker image to registry.
     parameters:
       registry:
-        description: Name of registry to use. Defaults to quay.io.
+        description: Name of registry to use. Defaults to $REGISTRY.
         type: string
         default: $REGISTRY
       image:
@@ -132,7 +260,7 @@ commands:
 jobs:
 
   publish:
-    description: Build and Push a Docker Image.
+    description: Standard build, test, and push of circleci remote docker agent image.
     executor: circleci-base
     parameters:
       dockerfile:
@@ -152,9 +280,21 @@ jobs:
         type: string
         default: $CIRCLE_SHA1
       registry:
-        description: Name of registry to use. Defaults to docker.io.
+        description: Name of registry to use. Defaults to $REGISTRY.
         type: string
         default: $REGISTRY
+      inspec-folder:
+        description: Name of folder containing inspec tests. Defaults to $INSPEC_FOLDER.
+        type: string
+        default: $INSPEC_FOLDER
+      inspec-test-cis:
+        description: Name of CIS benchmark test. Defaults to $INSPEC_TEST_CIS.
+        type: string
+        default: $INSPEC_TEST_CIS
+      inspec-test-container:
+        description: Name of routine container test. Defaults to $CIRCLE_PROJECT_REPONAME.
+        type: string
+        default: $CIRCLE_PROJECT_REPONAME
       after_checkout:
         description: Optional steps to run after checking out the code.
         type: steps
@@ -175,7 +315,7 @@ jobs:
           steps: << parameters.after_checkout >>
       - setup_remote_docker
       - decrypt-secrets
-      - check:
+      - setup-registry:
           registry: << parameters.registry >>
       - when:
           name: Run before_build lifecycle hook steps.
@@ -188,7 +328,12 @@ jobs:
           tag: << parameters.tag >>
           registry: << parameters.registry >>
       - test:
-
+          inspec-folder: << parameters.inspec-folder >>
+          inspec-test-cis: << parameters.inspec-test-cis >>
+          inspec-test-container: << parameters.inspec-test-container >>
+          image: << parameters.image >>
+          tag: << parameters.tag >>
+          registry: << parameters.registry >>
       - when:
           name: Run after_build lifecycle hook steps.
           condition: << parameters.after_build >>
@@ -199,7 +344,7 @@ jobs:
           tag: << parameters.tag >>
 
   release:
-    description: Pull current SHA1 tagged container, tag with release version, and Push Docker Image.
+    description: Standard release-tag and push of circleci remote docker agent SHA1 image.
     executor: circleci-base
     parameters:
       image:
@@ -215,7 +360,7 @@ jobs:
         type: string
         default: $CIRCLE_TAG
       registry:
-        description: Name of registry to use. Defaults to quay.io.
+        description: Name of registry to use. Defaults to $REGISTRY.
         type: string
         default: $REGISTRY
       after_checkout:
@@ -238,7 +383,7 @@ jobs:
           steps: << parameters.after_checkout >>
       - setup_remote_docker
       - decrypt-secrets
-      - check:
+      - setup-registry:
           registry: << parameters.registry >>
       - when:
           name: Run before_tag lifecycle hook steps.
@@ -261,81 +406,3 @@ jobs:
           registry: << parameters.registry >>
           image: << parameters.image >>
           tag: latest
-
-#examples:
-#  standard_build_and_push:
-#    description: |
-#      A standard docker workflow, where you are building an image with a
-#      Dockerfile in the root of your repository, naming the image to be the
-#      same name as your repository, and then pushing to the default docker
-#      registry (at docker.io).
-#    usage:
-#      version: 2.1
-#
-#      orbs:
-#        docker-publish: circleci/docker-publish@1.0.0
-#
-#      workflows:
-#        build_and_publish_docker_image:
-#          jobs:
-#          - docker-publish/publish
-#
-#  custom_name_and_tag:
-#    description: Build and Deploy docker image with a custom name and tag.
-#    usage:
-#      version: 2.1
-#
-#      orbs:
-#        docker-publish: circleci/docker-publish@1.0.0
-#
-#      workflows:
-#        build_and_publish_docker_image:
-#          jobs:
-#          - docker-publish/publish:
-#              image: my/image
-#              tag: my_tag
-#
-#  custom_registry_and_dockerfile:
-#    description: |
-#      Build and Deploy docker image with a non standard Dockerfile and to a
-#      custom registry.
-#    usage:
-#      version: 2.1
-#
-#      orbs:
-#        docker-publish: circleci/docker-publish@1.0.0
-#
-#      workflows:
-#        build_and_publish_docker_image:
-#          jobs:
-#          - docker-publish/publish:
-#              registry: my.docker.registry
-#              dockerfile: path/to/MyDockerFile
-#
-#  life_cycle_hooks:
-#    description: |
-#      Build and deploy a docker image with custom lifecycle hooks; before
-#      checking out the code from the VCS repository, before building the
-#      docker image, and after building the docker image.
-#    usage:
-#      version: 2.1
-#
-#      orbs:
-#        docker-publish: circleci/docker-publish@1.0.0
-#
-#      workflows:
-#        docker_with_lifecycle:
-#          jobs:
-#          - docker-publish/publish:
-#              after_checkout:
-#              - run:
-#                  name: Do this after checkout.
-#                  command: echo "Did this after checkout"
-#              before_build:
-#              - run:
-#                  name: Do this before the build.
-#                  command: echo "Did this before the build"
-#              after_build:
-#              - run:
-#                  name: Do this after the build.
-#                  command: echo "Did this after the build"
