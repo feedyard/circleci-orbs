@@ -1,0 +1,25 @@
+---
+version: 2.1
+
+description: feedyard standard circleci pipeline commands and jobs (feedyard conventions)
+
+commands:
+
+  decrypt-local-secrets:
+    description: decrypt standard local secrets file
+    parameters:
+      encryption-key:
+        description: Encryption key
+        type: string
+      encoded-file:
+        description: Name of local, encrypted file. Defaults to env.ci
+        type: string
+        default: env.ci
+      decoded-file:
+        description: Decrypted output filename. Defaults to local.env
+        type: string
+        default: local.env
+    steps:
+      - run:
+          name: decrypt secrets
+          command: openssl aes-256-cbc -d -in << parameters.encoded-file >> -out << parameters.decoded-file >> -k <<parameters.encryption-key >>

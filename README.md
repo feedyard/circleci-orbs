@@ -1,3 +1,3 @@
-# orb-docker-publish  
+# feedyard/circleci-orbs
 
-Combined build and publish Docker images to feedyard container registry
+Shared feedyard circleci jobs and commands.

@@ -1,3 +1,4 @@
+---
 version: 2.1
 
 description: Jobs and Commands for building, testing, and publishing standard circleci docker build agents
@@ -42,9 +43,9 @@ examples:
       workflows:
         build_and_publish_docker_image:
           jobs:
-          - docker-agents/publish:
-              image: my/image
-              tag: my_tag
+            - docker-agents/publish:
+                image: my/image
+                tag: my_tag
 
   custom_registry_and_dockerfile:
     description: |
@@ -59,9 +60,9 @@ examples:
       workflows:
         build_and_publish_docker_image:
           jobs:
-          - docker-agents/publish:
-              registry: my.docker.registry
-              dockerfile: path/to/MyDockerFile
+            - docker-agents/publish:
+                registry: my.docker.registry
+                dockerfile: path/to/MyDockerFile
 
   life_cycle_hooks:
     description: |
@@ -77,19 +78,19 @@ examples:
       workflows:
         docker_with_lifecycle:
           jobs:
-          - docker-agents/publish:
-              after_checkout:
-              - run:
-                  name: Do this after checkout.
-                  command: echo "Did this after checkout"
-              before_build:
-              - run:
-                  name: Do this before the build.
-                  command: echo "Did this before the build"
-              after_build:
-              - run:
-                  name: Do this after the build.
-                  command: echo "Did this after the build"
+            - docker-agents/publish:
+                after_checkout:
+                  - run:
+                      name: Do this after checkout.
+                      command: echo "Did this after checkout"
+                before_build:
+                  - run:
+                      name: Do this before the build.
+                      command: echo "Did this before the build"
+                after_build:
+                  - run:
+                      name: Do this after the build.
+                      command: echo "Did this after the build"
 
 executors:
 
@@ -97,6 +98,7 @@ executors:
     description: The docker container to use when running docker-agents jobs
     docker:
       - image: quay.io/feedyard/circleci-base-agent
+    working_directory: ~/$CIRCLE_PROJECT_REPONAME
     environment:
       REGISTRY: quay.io
       DOCKERFILE: Dockerfile
@@ -207,7 +209,7 @@ commands:
             CID="$(docker run -it -d --entrypoint ash << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>)"
             inspec exec $INSPEC_FOLDER/$CIRCLE_PROJECT_REPONAME/ -t docker://$CID
             docker rm -f $CID
-    
+
   version-tag:
     description: Pull and version Tag a Docker Image.
     parameters:
@@ -253,9 +255,9 @@ commands:
         type: string
         default: $CIRCLE_SHA1
     steps:
-    - run:
-        name: Push Docker Image
-        command: docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
+      - run:
+          name: Push Docker Image
+          command: docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
 
 jobs:
 

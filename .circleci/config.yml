@@ -1,0 +1,34 @@
+---
+version: 2.1
+
+workflows:
+  circleci-orbs-pipeline:
+    jobs:
+      - dev-release
+
+executors:
+
+  circleci-orb:
+    working_directory: '~/${CIRCLE_PROJECT_REPONAME}'
+    docker:
+      - image: quay.io/feedyard/circleci-orb-agent
+    environment:
+      BASH_ENV: local.env
+
+
+jobs:
+
+  dev-release:
+    executor: circleci-orb
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: setup
+          command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
+      - run:
+          name: lint
+          command: yamllint .
+      - run:
+          name: validate orb.yaml
+          command: bash scripts/validate-orbs.sh
