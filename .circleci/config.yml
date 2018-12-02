@@ -9,7 +9,6 @@ workflows:
 executors:
 
   circleci-orb:
-    working_directory: '~/${CIRCLE_PROJECT_REPONAME}'
     docker:
       - image: quay.io/feedyard/circleci-orb-agent
     environment:
