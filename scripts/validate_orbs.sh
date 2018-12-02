@@ -3,7 +3,7 @@
 for ORB in src/*; do
   echo "Validating $ORB ..."
 
-  circleci orb validate $ORB/orb.yml; RETURN_CODE=$?
+  circleci orb validate $ORB/orb.yaml; RETURN_CODE=$?
 
   if [[ $RETURN_CODE != 0 ]]; then
   	exit 1
