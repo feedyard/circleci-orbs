@@ -30,4 +30,4 @@ jobs:
           command: yamllint .
       - run:
           name: validate orb.yaml
-          command: ash scripts/validate-orbs.sh
+          command: ash scripts/validate_orbs.sh
