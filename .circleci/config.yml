@@ -4,7 +4,15 @@ version: 2.1
 workflows:
   circleci-orbs-pipeline:
     jobs:
-      - dev-release
+      - dev-release:
+          filters:
+            branches:
+              only: master
+            tags:
+              ignore: /.*/
+
+orbs:
+  slack: circleci/slack@0.1.8
 
 executors:
 
@@ -31,3 +39,9 @@ jobs:
       - run:
           name: validate orb.yaml
           command: ash scripts/validate_orbs.sh
+      - slack/notify:
+          message: 'dev-release of ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1}'
+          mention: '${CIRCLE_USERNAME}'
+      - run:
+          name: dev publish
+          command: ash scripts/dev_release_orbs.sh
