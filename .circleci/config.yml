@@ -41,7 +41,7 @@ jobs:
           command: ash scripts/validate_orbs.sh
       - slack/notify:
           message: 'dev-release of ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1}'
-          mention: '${CIRCLE_USERNAME}'
+          mentions: '${CIRCLE_USERNAME}'
       - run:
           name: dev publish
           command: ash scripts/dev_release_orbs.sh
