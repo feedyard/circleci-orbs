@@ -5,9 +5,9 @@ for ORB in src/*; do
 
   #| grep $ORB
   #if [ $? == 0 ]; then
-  if [[ $(circleci orb list $CIRCLE_PROJECT_USERNAME) != *$ORB* ]]; then
+  if [ $(circleci orb list $CIRCLE_PROJECT_USERNAME) != *$ORB* ]; then
      echo "first time orb published"
-     circleci orb create $CIRCLE_PROJECT_USERNAME/$ORB
+     circleci orb create $CIRCLE_PROJECT_USERNAME/$ORB --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
   fi
 
   circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
