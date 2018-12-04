@@ -43,9 +43,10 @@ jobs:
           name: step test
           command: |
             for ORB in src/*; do
-
+              echo $ORB
               # create orb registry entries for new orbs
               orbname=$(basename $ORB)
+              echo $orbname
               if ! circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q '$orbname'; then
                 echo "new orb dev release for $CIRCLE_PROJECT_USERNAME/$orbname"
               fi
