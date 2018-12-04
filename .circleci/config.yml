@@ -41,7 +41,7 @@ jobs:
           command: ash scripts/validate_orbs.sh
       - run:
           name: slack
-          command: curl -X POST -H "Content-type: application/json" --data '{"text":"dev-release of ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1}"}' $SLACK_WEBHOOK
+          command: ash scripts/slack_message.sh '{"text":"dev-release of ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1}"}'
       - run:
           name: dev publish
           command: ash scripts/dev_release_orbs.sh

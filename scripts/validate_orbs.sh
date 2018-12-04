@@ -1,4 +1,4 @@
-#!/bin/bash -eo pipefail
+#!/bin/ash -eo pipefail
 
 for ORB in src/*; do
   echo "Validating $ORB ..."
