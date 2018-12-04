@@ -39,30 +39,6 @@ jobs:
       - run:
           name: validate orb.yaml
           command: ash scripts/validate_orbs.sh
-#      - run:
-#          name: publish dev version
-#          command: |
-#            for ORB in src/*; do
-#              echo "Dev release $ORB ..."
-#
-#              if circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q '$ORB'; then
-#                 echo "first time orb published"
-#                 circleci orb create $CIRCLE_PROJECT_USERNAME/$ORB --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
-#                 if $RETURN_CODE != 0; then
-#                   exit 1
-#                 fi
-#              fi
-#
-#              circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
-#              if $RETURN_CODE != 0; then
-#                exit 1
-#              fi
-#
-#              circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:latest --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
-#              if $RETURN_CODE != 0; then
-#              	exit 1
-#              fi
-#            done
       - run:
           name: step test
           command: |
@@ -72,20 +48,20 @@ jobs:
               orbname=$(basename $ORB)
               if ! circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q '$orbname'; then
                 echo "new orb dev release for $CIRCLE_PROJECT_USERNAME/$orbname"
-                circleci orb create $CIRCLE_PROJECT_USERNAME/$orbname --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
-                if $RETURN_CODE != 0; then
-                  exit 1
-                fi
+#                circleci orb create $CIRCLE_PROJECT_USERNAME/$orbname --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
+#                if $RETURN_CODE != 0; then
+#                  exit 1
+#                fi
               fi
-
-              circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
-              if $RETURN_CODE != 0; then
-                exit 1
-              fi
-
-              circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:volatile --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
-              if $RETURN_CODE != 0; then
-                exit 1
-              fi
+#
+#              circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
+#              if $RETURN_CODE != 0; then
+#                exit 1
+#              fi
+#
+#              circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:volatile --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
+#              if $RETURN_CODE != 0; then
+#                exit 1
+#              fi
 
             done
