@@ -53,10 +53,10 @@ jobs:
 #                 fi
 #              fi
 #
-#              circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
-#              if $RETURN_CODE != 0; then
-#                exit 1
-#              fi
+              circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
+              if $RETURN_CODE != 0; then
+                exit 1
+              fi
 #
 #              circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:latest --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
 #              if $RETURN_CODE != 0; then
@@ -66,11 +66,21 @@ jobs:
       - run:
           name: step test
           command: |
-            #source local.env
             for ORB in src/*; do
+
+              # create orb registry entries for new orbs
               orbname=$(basename $ORB)
               if ! circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q $orbname; then
                 echo "new orb dev release for $CIRCLE_PROJECT_USERNAME/$orbname"
                 circleci orb create $CIRCLE_PROJECT_USERNAME/$orbname --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
+                if $RETURN_CODE != 0; then
+                  exit 1
+                fi
               fi
+
+              circleci orb publish $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
+              if $RETURN_CODE != 0; then
+                exit 1
+              fi
+
             done
