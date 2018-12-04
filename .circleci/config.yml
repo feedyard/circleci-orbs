@@ -42,6 +42,7 @@ jobs:
       - run:
           name: step test
           command: |
+            circleci orb list $CIRCLE_PROJECT_USERNAME
             for ORB in src/*; do
               echo $ORB
               # create orb registry entries for new orbs
