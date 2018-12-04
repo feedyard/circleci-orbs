@@ -67,7 +67,8 @@ jobs:
           name: step test
           command: |
             for ORB in src/*; do
-              if circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q $ORB; then
+              orbname=$(basename $ORB)
+              if circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q $orbname; then
                 echo "matched $ORB"
               else
                 echo "no match $ORB"
