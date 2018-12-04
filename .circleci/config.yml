@@ -40,9 +40,6 @@ jobs:
           name: validate orb.yaml
           command: ash scripts/validate_orbs.sh
       - run:
-          name: dev publish
-          command: ash scripts/dev_release_orbs.sh
-      - run:
           name: publish dev version
           command: |
             #!/bin/ash -eo pipefail
