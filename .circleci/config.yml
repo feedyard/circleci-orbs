@@ -16,7 +16,7 @@ orbs:
 
 executors:
 
-  circleci-orb:
+  circleci-orb-agent:
     docker:
       - image: quay.io/feedyard/circleci-orb-agent
     environment:
@@ -26,10 +26,7 @@ executors:
 jobs:
 
   dev-release:
-    docker:
-      - image: quay.io/feedyard/circleci-orb-agent
-    environment:
-      BASH_ENV: local.env
+    executor: circleci-orb-agent
     steps:
       - checkout
       - setup_remote_docker
