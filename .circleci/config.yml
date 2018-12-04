@@ -43,7 +43,7 @@ jobs:
           name: step test
           command: |
             for ORB in src/*; do
-              orbname =$(basename $ORB)
+              orbname=$(basename $ORB)
               # dev release using SHA1 as release version
               circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
               if $RETURN_CODE != 0; then
