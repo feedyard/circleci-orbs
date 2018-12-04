@@ -66,6 +66,7 @@ jobs:
       - run:
           name: step test
           command: |
+            echo $TEST_ENV
             for ORB in src/*; do
               orbname=$(basename $ORB)
               if ! circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q $orbname; then
