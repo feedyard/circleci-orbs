@@ -39,9 +39,9 @@ jobs:
       - run:
           name: validate orb.yaml
           command: ash scripts/validate_orbs.sh
-      - slack/notify:
-          message: 'dev-release of ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1}'
-          mentions: '${CIRCLE_USERNAME}'
+      - run:
+          name: slack
+          command: curl -X POST -H 'Content-type: application/json' --data '{"text":"dev-release of ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1}"}' ${SLACK_WEBHOOK}
       - run:
           name: dev publish
           command: ash scripts/dev_release_orbs.sh
