@@ -78,7 +78,7 @@ jobs:
                 fi
               fi
 
-              circleci orb publish $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
+              circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
               if $RETURN_CODE != 0; then
                 exit 1
               fi
