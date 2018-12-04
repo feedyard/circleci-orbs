@@ -26,7 +26,10 @@ executors:
 jobs:
 
   dev-release:
-    executor: circleci-orb
+    docker:
+      - image: quay.io/feedyard/circleci-orb-agent
+    environment:
+      BASH_ENV: local.env
     steps:
       - checkout
       - setup_remote_docker
@@ -66,7 +69,7 @@ jobs:
       - run:
           name: step test
           command: |
-            source local.env
+            #source local.env
             for ORB in src/*; do
               orbname=$(basename $ORB)
               if ! circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q $orbname; then
