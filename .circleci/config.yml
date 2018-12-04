@@ -68,7 +68,7 @@ jobs:
           command: |
             for ORB in src/*; do
               orbname=$(basename $ORB)
-              if circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q $orbname; then
+              if ! circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q $orbname; then
                 echo "matched $ORB"
               else
                 echo "no match $ORB"
