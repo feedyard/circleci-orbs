@@ -70,7 +70,7 @@ jobs:
 
               # create orb registry entries for new orbs
               orbname=$(basename $ORB)
-              if ! circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q $orbname; then
+              if ! circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q '/$orbname'; then
                 echo "new orb dev release for $CIRCLE_PROJECT_USERNAME/$orbname"
                 circleci orb create $CIRCLE_PROJECT_USERNAME/$orbname --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
                 if $RETURN_CODE != 0; then
