@@ -42,26 +42,24 @@ jobs:
       - run:
           name: publish dev version
           command: |
-            #!/bin/ash -eo pipefail
-
             for ORB in src/*; do
               echo "Dev release $ORB ..."
 
               if circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q '$ORB'; then
                  echo "first time orb published"
                  circleci orb create $CIRCLE_PROJECT_USERNAME/$ORB --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
-                 if [[ $RETURN_CODE != 0 ]]; then
+                 if $RETURN_CODE != 0; then
                    exit 1
                  fi
               fi
 
               circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
-              if [[ $RETURN_CODE != 0 ]]; then
+              if $RETURN_CODE != 0; then
                 exit 1
               fi
               circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:latest --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
 
-              if [[ $RETURN_CODE != 0 ]]; then
+              if $RETURN_CODE != 0; then
               	exit 1
               fi
             done
