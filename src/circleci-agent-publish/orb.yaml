@@ -14,7 +14,7 @@ examples:
       version: 2.1
 
       orbs:
-        docker-agents: feedyard/docker-agentsh@1.0.0
+        docker-agents: feedyard/docker-agents@1.0.0
 
       workflows:
         circleci-remote-docker-image-pipeline:
@@ -38,7 +38,7 @@ examples:
       version: 2.1
 
       orbs:
-        docker-agents: feedyard/docker-agentsh@1.0.0
+        docker-agents: feedyard/docker-agents@1.0.0
 
       workflows:
         build_and_publish_docker_image:
@@ -55,7 +55,7 @@ examples:
       version: 2.1
 
       orbs:
-        docker-agents: feedyard/docker-agentsh@1.0.0
+        docker-agents: feedyard/docker-agents@1.0.0
 
       workflows:
         build_and_publish_docker_image:

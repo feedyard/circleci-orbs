@@ -3,6 +3,13 @@
 for ORB in src/*; do
   echo "Dev release $ORB ..."
 
+  #| grep $ORB
+  #if [ $? == 0 ]; then
+  if [[ $(circleci orb list $CIRCLE_PROJECT_USERNAME) != *$ORB* ]]; then
+     echo "first time orb published"
+     circleci orb create $CIRCLE_PROJECT_USERNAME/$ORB
+  fi
+
   circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
   circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:latest --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
 
@@ -10,4 +17,3 @@ for ORB in src/*; do
   	exit 1
   fi
 done
-
