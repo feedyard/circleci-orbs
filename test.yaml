@@ -7,15 +7,15 @@ orbs:
 workflows:
   circleci-remote-docker-image-pipeline:
     jobs:
-    - docker-agents/publish:
-        filters:
-          branches:
-            only: master
-          tags:
-            ignore: /.*/
-    - docker-agents/release:
-        filters:
-          branches:
-            ignore: /.*/
-          tags:
-            only: /.*/
+      - docker-agents/publish:
+          filters:
+            branches:
+              only: master
+            tags:
+              ignore: /.*/
+      - docker-agents/release:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
