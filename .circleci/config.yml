@@ -70,7 +70,7 @@ jobs:
               # if circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q "$ORB"; then
               if echo 'test' | grep -q 'test'; then
                 echo "matched $ORB"
-              elseif
+              elif
                 echo "no match $ORB"
               fi
             done
