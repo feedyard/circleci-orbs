@@ -69,8 +69,7 @@ jobs:
             for ORB in src/*; do
               orbname=$(basename $ORB)
               if ! circleci orb list $CIRCLE_PROJECT_USERNAME | grep -q $orbname; then
-                echo "matched $ORB"
-              else
-                echo "no match $ORB"
+                echo "new orb dev release for $CIRCLE_PROJECT_USERNAME/$orbname"
+                circleci orb create $CIRCLE_PROJECT_USERNAME/$orbname --token $CIRCLECI_API_TOKEN; RETURN_CODE=$?
               fi
             done
