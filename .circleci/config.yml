@@ -52,14 +52,19 @@ jobs:
           command: ash scripts/validate_orbs.sh
       - run:
           name: SHA1/volatile development release
+          working_directory: project
           command: |
             for ORB in src/*; do
               orbname=$(basename $ORB)
               # dev release using SHA1 as release version
               circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN
               # dev release using 'volatile' as release version
-              circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:volatile --token $CIRCLECI_API_TOKEN
+              circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest --token $CIRCLECI_API_TOKEN
             done
+            if [git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}']; then
+              echo 'commit msg indicates ready to publish'
+              echo $(git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
+              echo $(git show | awk -v id="$SEMANTIC_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
 
   publish:
     executor: circleci-orb-agent
@@ -75,8 +80,8 @@ jobs:
             for ORB in src/*; do
               orbname=$(basename $ORB)
               semver=patch
-              if [git show | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_ORB_IDENTIFIER/)print $(i+1)}']; then
-                semver=$(git show | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_SEMVER_IDENTIFIER/)print $(i+1)}')
+              if [git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}']; then
+                semver=$(git show | awk -v id="$SEMANTIC_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
                 if [! semver]; then
                   echo "error: incorrect semver specified [$semver]"
                   exit 1
