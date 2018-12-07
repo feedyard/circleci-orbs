@@ -59,15 +59,15 @@ jobs:
 
   publish:
     executor: circleci-orb-agent
-      steps:
-        - checkout
-        - setup_remote_docker
-        - run:
-            name: decrypt secrets
-            command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
-        - run:
-            name: publish incremental orb version
-            command: |
-              orbname=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_ORB_IDENTIFIER/)print $(i+1)}')
-              semver=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_SEMVER_IDENTIFIER/)print $(i+1)}')
-              circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 $semver --token $CIRCLECI_API_TOKEN
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: decrypt secrets
+          command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
+      - run:
+          name: publish incremental orb version
+          command: |
+            orbname=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_ORB_IDENTIFIER/)print $(i+1)}')
+            semver=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_SEMVER_IDENTIFIER/)print $(i+1)}')
+            circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 $semver --token $CIRCLECI_API_TOKEN
