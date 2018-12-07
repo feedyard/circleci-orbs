@@ -10,9 +10,14 @@ workflows:
               only: master
             tags:
               ignore: /.*/
-
-orbs:
-  slack: circleci/slack@0.1.8
+      - publish:
+          requires:
+            - dev-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
 
 executors:
 
@@ -20,6 +25,8 @@ executors:
     docker:
       - image: quay.io/feedyard/circleci-orb-agent
     environment:
+      TAG_MSG_ORB_IDENTIFIER: orb
+      TAG_MSG_SEMVER_IDENTIFIER: level
       BASH_ENV: local.env
 
 
@@ -31,16 +38,16 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: setup
+          name: decrypt secrets
           command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
       - run:
           name: lint
           command: yamllint .
       - run:
-          name: validate orb.yaml
+          name: validate orbs
           command: ash scripts/validate_orbs.sh
       - run:
-          name: step test
+          name: SHA1/volatile development release
           command: |
             for ORB in src/*; do
               orbname=$(basename $ORB)
@@ -49,3 +56,18 @@ jobs:
               # dev release using 'volatile' as release version
               circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:volatile --token $CIRCLECI_API_TOKEN
             done
+
+  publish:
+    executor: circleci-orb-agent
+      steps:
+        - checkout
+        - setup_remote_docker
+        - run:
+            name: decrypt secrets
+            command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
+        - run:
+            name: publish incremental orb version
+            command: |
+              orbname=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_ORB_IDENTIFIER/)print $(i+1)}')
+              semver=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_SEMVER_IDENTIFIER/)print $(i+1)}')
+              circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 $semver --token $CIRCLECI_API_TOKEN
