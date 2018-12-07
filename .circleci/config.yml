@@ -4,20 +4,24 @@ version: 2.1
 workflows:
   circleci-orbs-pipeline:
     jobs:
-      - dev-release:
-          filters:
-            branches:
-              only: master
-            tags:
-              ignore: /.*/
-      - publish:
+      - dev-release
+#          filters:
+#            branches:
+#              only: master
+#            tags:
+#              ignore: /.*/
+      - approve-publish:
+          type: approval
           requires:
             - dev-release
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      - publish:
+          requires:
+            - approve-publish
+#          filters:
+#            branches:
+#              ignore: /.*/
+#            tags:
+#              only: /.*/
 
 executors:
 
@@ -68,6 +72,19 @@ jobs:
       - run:
           name: publish incremental orb version
           command: |
-            orbname=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_ORB_IDENTIFIER/)print $(i+1)}')
-            semver=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_SEMVER_IDENTIFIER/)print $(i+1)}')
-            circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 $semver --token $CIRCLECI_API_TOKEN
+            for ORB in src/*; do
+              orbname=$(basename $ORB)
+              semver=patch
+              if [git show | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_ORB_IDENTIFIER/)print $(i+1)}']; then
+                semver=$(git show | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_SEMVER_IDENTIFIER/)print $(i+1)}')
+                if [! semver]; then
+                  echo "error: incorrect semver specified [$semver]"
+                  exit 1
+                fi
+              fi
+              # publish production version
+              circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 $semver --token $CIRCLECI_API_TOKEN
+            done
+#            orbname=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_ORB_IDENTIFIER/)print $(i+1)}')
+#            semver=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_SEMVER_IDENTIFIER/)print $(i+1)}')
+#            circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 $semver --token $CIRCLECI_API_TOKEN
