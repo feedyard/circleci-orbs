@@ -64,11 +64,11 @@ jobs:
           name: is msg?
           working_directory: project
           command: |
-            if [git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}']; then
+            #if [git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}']; then
               echo 'commit msg indicates ready to publish'
               echo $(git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
               echo $(git show | awk -v id="$SEMANTIC_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
-            fi
+            #fi
 
   publish:
     executor: circleci-orb-agent
