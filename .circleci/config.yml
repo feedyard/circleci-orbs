@@ -52,7 +52,7 @@ jobs:
           command: ash scripts/validate_orbs.sh
       - run:
           name: SHA1/volatile development release
-          working_directory: project
+          #working_directory: project
           command: |
             for ORB in src/*; do
               orbname=$(basename $ORB)
