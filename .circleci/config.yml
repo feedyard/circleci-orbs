@@ -52,7 +52,6 @@ jobs:
           command: ash scripts/validate_orbs.sh
       - run:
           name: SHA1/volatile development release
-          #working_directory: project
           command: |
             for ORB in src/*; do
               orbname=$(basename $ORB)
@@ -61,6 +60,9 @@ jobs:
               # dev release using 'volatile' as release version
               circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest --token $CIRCLECI_API_TOKEN
             done
+      - run:
+          name: is msg?
+          command: |
             if [git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}']; then
               echo 'commit msg indicates ready to publish'
               echo $(git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
