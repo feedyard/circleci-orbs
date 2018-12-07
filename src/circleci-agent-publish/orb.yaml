@@ -7,7 +7,7 @@ examples:
 
   standard_tbd_workflow:
     description: |
-      A standard TBD circleci docker agent pipeline workflow, where git push triggers build, test, and push
+      A standard TBD circleci docker agent pipeline workflow, where git push triggers build, test, and push.
       Dockerfile is in the root of your repository, image name is same name as your repository, and then
       pushing to the default docker registry (at quay.io).
     usage:
