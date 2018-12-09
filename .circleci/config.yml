@@ -5,11 +5,6 @@ workflows:
   circleci-orbs-pipeline:
     jobs:
       - dev-release
-#          filters:
-#            branches:
-#              only: master
-#            tags:
-#              ignore: /.*/
       - approve-publish:
           type: approval
           requires:
@@ -17,11 +12,6 @@ workflows:
       - publish:
           requires:
             - approve-publish
-#          filters:
-#            branches:
-#              ignore: /.*/
-#            tags:
-#              only: /.*/
 
 executors:
 
@@ -29,8 +19,9 @@ executors:
     docker:
       - image: quay.io/feedyard/circleci-orb-agent
     environment:
-      TAG_MSG_ORB_IDENTIFIER: orb
-      TAG_MSG_SEMVER_IDENTIFIER: level
+      MSG_IDENTIFIER: TEAM
+      ORB_IDENTIFIER: orb!
+      SEMVER_IDENTIFIER: level!
       BASH_ENV: local.env
 
 
@@ -45,30 +36,21 @@ jobs:
           name: decrypt secrets
           command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
       - run:
-          name: lint
+          name: validate yaml
           command: yamllint .
       - run:
           name: validate orbs
           command: ash scripts/validate_orbs.sh
       - run:
-          name: SHA1/volatile development release
+          name: SHA1/latest development release
           command: |
             for ORB in src/*; do
               orbname=$(basename $ORB)
               # dev release using SHA1 as release version
               circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN
-              # dev release using 'volatile' as release version
+              # dev release using 'latest' as release version
               circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest --token $CIRCLECI_API_TOKEN
             done
-      - run:
-          name: is msg?
-          working_directory: project
-          command: |
-            #if [git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}']; then
-              echo 'commit msg indicates ready to publish'
-              echo $(git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
-              echo $(git show | awk -v id="$SEMANTIC_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
-            #fi
 
   publish:
     executor: circleci-orb-agent
@@ -81,19 +63,24 @@ jobs:
       - run:
           name: publish incremental orb version
           command: |
-            for ORB in src/*; do
-              orbname=$(basename $ORB)
-              semver=patch
-              if [git show | awk -v id="$TAG_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}']; then
+            commit_msg=$(git show | grep $MSG_IDENTIFIER)
+            if [ $commit_msg ]; then
+              echo $commit_msg
+              orbname=$(git show | awk -v id="$ORB_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
+              if [ $orbname ]; then
+                echo $orbname
                 semver=$(git show | awk -v id="$SEMANTIC_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
-                if [! semver]; then
-                  echo "error: incorrect semver specified [$semver]"
+                if [ $semver ]; then
+                  echo $semver
+                else
+                  echo 'no semver'
                   exit 1
                 fi
+              else
+                echo 'no orbname'
+                exit 1
               fi
-              # publish production version
-              circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 $semver --token $CIRCLECI_API_TOKEN
-            done
-#            orbname=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_ORB_IDENTIFIER/)print $(i+1)}')
-#            semver=$(git show $CIRCLE_TAG | awk '{for(i=1;i<=NF;i++)if($i~/$TAG_MSG_SEMVER_IDENTIFIER/)print $(i+1)}')
-#            circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 $semver --token $CIRCLECI_API_TOKEN
+            else
+              echo 'no commit message'
+              exit 1
+            fi
