@@ -65,7 +65,7 @@ jobs:
           command: |
             commit_msg=$(git show | grep $MSG_IDENTIFIER)
             orbname=$(git show | awk -v id="$ORB_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
-            semver=$(git show | awk -v id="$SEMANTIC_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
+            semver=$(git show | awk -v id="$SEMVER_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
             echo $commit_msg
             echo $orbname
             echo $semver
