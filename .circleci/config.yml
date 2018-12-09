@@ -45,8 +45,7 @@ jobs:
               orbname=$(basename $ORB)
               # pull dev:latest
               circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest > $orbname.latest
-              cat ${ORB}/orb.yaml
-              cat $orbname.latest
+              diff ${ORB}/orb.yaml $orbname.latest
               if [[ $(diff ${ORB}/orb.yaml $orbname.latest) ]]; then
                 echo "dev-release of $ORB"
                 # dev release using SHA1 as release version
