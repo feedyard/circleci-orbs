@@ -41,7 +41,7 @@ jobs:
       - run:
           name: SHA1/latest development release
           command: |
-            LAST_SUCCESSFUL_COMMIT=$(curl -Ss -u "$CIRCLECI_API_TOKEN:" "https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME?filter=successful&limit=1" | jq -r '.[0]["vcs_revision"]')
+            LAST_SUCCESSFUL_COMMIT=$(curl -Ss -u "$CIRCLECI_API_TOKEN:" "https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME?filter=completed&limit=1" | jq -r '.[0]["vcs_revision"]')
             echo "compare to last successful build $LAST_SUCCESSFUL_COMMIT"
             for ORB in src/*; do
               if [[ $(git diff $LAST_SUCCESSFUL_COMMIT:${ORB}/orb.yaml ${ORB}/orb.yaml) ]]; then
