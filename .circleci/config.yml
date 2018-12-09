@@ -42,8 +42,9 @@ jobs:
           name: SHA1/latest development release
           command: |
             LAST_SUCCESSFUL_COMMIT=$(curl -Ss -u "$CIRCLECI_API_TOKEN:" "https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME?filter=completed&limit=1" | jq -r '.[0]["vcs_revision"]')
+            echo 'last=$LAST_SUCCESSFUL_COMMIT'
             for ORB in src/*; do
-              if [[ $(git diff $LAST_SUCCESSFUL_COMMIT:${ORB}/orb.yaml) ]]; then
+              if [[ $(git diff $LAST_SUCCESSFUL_COMMIT:${ORB}/orb.yaml ${ORB}/orb.yaml) ]]; then
                 orbname=$(basename $ORB)
                 # dev release using SHA1 as release version
                 circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN
