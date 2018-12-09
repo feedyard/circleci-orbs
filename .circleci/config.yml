@@ -64,23 +64,28 @@ jobs:
           name: publish incremental orb version
           command: |
             commit_msg=$(git show | grep $MSG_IDENTIFIER)
-            if [ $commit_msg ]; then
-              echo $commit_msg
-              orbname=$(git show | awk -v id="$ORB_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
-              if [ $orbname ]; then
-                echo $orbname
-                semver=$(git show | awk -v id="$SEMANTIC_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
-                if [ $semver ]; then
-                  echo $semver
-                else
-                  echo 'no semver'
-                  exit 1
-                fi
-              else
-                echo 'no orbname'
-                exit 1
-              fi
-            else
-              echo 'no commit message'
-              exit 1
-            fi
+            orbname=$(git show | awk -v id="$ORB_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
+            semver=$(git show | awk -v id="$SEMANTIC_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
+            echo $commit_msg
+            echo $orbname
+            echo $semver
+#            if [ $commit_msg ]; then
+#              echo $commit_msg
+#              orbname=$(git show | awk -v id="$ORB_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
+#              if [ $orbname ]; then
+#                echo $orbname
+#                semver=$(git show | awk -v id="$SEMANTIC_IDENTIFIER" '{for(i=1;i<=NF;i++)if($i~id)print $(i+1)}')
+#                if [ $semver ]; then
+#                  echo $semver
+#                else
+#                  echo 'no semver'
+#                  exit 1
+#                fi
+#              else
+#                echo 'no orbname'
+#                exit 1
+#              fi
+#            else
+#              echo 'no commit message'
+#              exit 1
+#            fi
