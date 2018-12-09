@@ -45,6 +45,7 @@ jobs:
             echo $LAST_SUCCESSFUL_COMMIT
             for ORB in src/*; do
               if [[ $(git diff $LAST_SUCCESSFUL_COMMIT:${ORB}/orb.yaml ${ORB}/orb.yaml) ]]; then
+                echo $ORB
                 orbname=$(basename $ORB)
                 # dev release using SHA1 as release version
                 circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN
