@@ -18,8 +18,8 @@
 #  fi
 #done
 for ORB in src/*; do
-  echo >> ${ORB}/orb.yaml
   orbname=$(basename $ORB)
+  printf %s "$(< ${ORB}/orb.yaml)" > $orbname.compare
   circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest > $orbname.latest
   diff ${ORB}/orb.yaml $orbname.latest
 done
