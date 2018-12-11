@@ -1,7 +1,12 @@
 ---
 version: 2.1
 
+orbs:
+  common: feedyard/common-pipeline-tasks@0.1.0
+
 workflows:
+  version: 2
+
   circleci-orbs-pipeline:
     jobs:
       - dev-release
@@ -29,9 +34,10 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run:
-          name: decrypt secrets
-          command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
+      - common/decrypt-env
+#      - run:
+#          name: decrypt secrets
+#          command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
       - run:
           name: validate yaml
           command: yamllint .
@@ -39,7 +45,7 @@ jobs:
           name: validate orbs
           command: |
             for ORB in src/*; do
-              echo "Validating $ORB ..."
+              echo "Validating $ORB"
               circleci orb validate $ORB/orb.yaml
             done
       - run:
@@ -68,11 +74,12 @@ jobs:
           command: |
             for ORB in src/*; do
               orbname=$(basename $ORB)
-              semver='patch'
+              semver=patch
               circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@volatile > $orbname.volatile
               if [[ $(diff <(printf %s "$(< $ORB/orb.yaml)") <(printf %s "$(< $orbname.volatile)")) ]]; then
-                echo "publish $CIRCLE_PROJECT_USERNAME/$orbname"
-                ls $ORB/minor && semver=minor; ls $ORB/major && semver=major
+                ls $ORB/minor >> /dev/null 2>&1 && semver=minor; ls $ORB/major >> /dev/null 2>&1 && semver=major
+                echo "publish $CIRCLE_PROJECT_USERNAME/$orbname $semver"
                 circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest $semver --token $CIRCLECI_API_TOKEN
               fi
             done
+
