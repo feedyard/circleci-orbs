@@ -2,7 +2,7 @@
 version: 2.1
 
 orbs:
-  common-tasks: feedyard/common-pipeline-tasks@0.1.1
+  common-tasks: feedyard/common-pipeline-tasks@0.1.2
 
 workflows:
   version: 2

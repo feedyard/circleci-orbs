@@ -2,8 +2,8 @@
 version: 2.1
 
 description: |
-  Feedyard common-pipeline-tasks is an example set of shared command a jobs that team(s)
-  would use to standardize common team practices or conventions.
+  Feedyard common-pipeline-tasks is an example set of shared commands and jobs that team(s)
+  would use to standardize basic team practices or conventions.
   Orb source code - https://github.com/feedyard/circleci-orbs/blob/master/src/common-pipeline-tasks/orb.yaml
 
 examples:
@@ -30,15 +30,15 @@ commands:
     description: decrypt env file
     parameters:
       encryption-key:
-        description: Encryption key. Defaults to $FEEDYARD_CIRCLECI_ENC
+        description: Encryption key (recommend 100 chars or more in random key gen)
         type: string
         default: $FEEDYARD_CIRCLECI_ENC
       encoded-file:
-        description: Name of encrypted file. Defaults to ./env.ci
+        description: Name of encrypted file
         type: string
         default: env.ci
       decoded-file:
-        description: Name of decrypted output file. Defaults to ./local.env
+        description: Name of decrypted output file
         type: string
         default: local.env
     steps:
