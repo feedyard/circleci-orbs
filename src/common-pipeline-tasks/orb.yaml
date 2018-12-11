@@ -1,7 +1,28 @@
 ---
 version: 2.1
 
-description: basic feedyard circleci pipeline commands and jobs (feedyard conventions)
+description: |
+  Feedyard common-pipeline-tasks is an example set of shared command a jobs that team(s)
+  would use to standardize common team practices or conventions.
+  Orb source code - https://github.com/feedyard/circleci-orbs/blob/master/src/common-pipeline-tasks/orb.yaml
+
+examples:
+
+  decrypt_local_file:
+    description: |
+      Use this command to decrypt a local file using openssl aes-256-cbc key encryption. Define default
+      orb values according to team conventions to make it easy to 'do the right thing'.
+    usage:
+      version: 2.1
+      orbs:
+        common-tasks: feedyard/common-pipeline-tasks@0.1.1
+      workflows:
+        pipeline:
+          jobs:
+            - common-tasks/decrypt-env:
+                encryption-key: $ENV_VAR
+                encoded-file: filename.in
+                decoded-file: filename.out
 
 commands:
 
@@ -13,11 +34,11 @@ commands:
         type: string
         default: $FEEDYARD_CIRCLECI_ENC
       encoded-file:
-        description: Name of local, encrypted file. Defaults to env.ci
+        description: Name of encrypted file. Defaults to ./env.ci
         type: string
         default: env.ci
       decoded-file:
-        description: Name pf decrypted output file. Defaults to local.env
+        description: Name of decrypted output file. Defaults to ./local.env
         type: string
         default: local.env
     steps:
