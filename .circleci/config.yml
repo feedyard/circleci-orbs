@@ -82,4 +82,3 @@ jobs:
                 circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest $semver --token $CIRCLECI_API_TOKEN
               fi
             done
-
