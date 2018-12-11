@@ -42,13 +42,10 @@ jobs:
           name: SHA1/latest development release
           command: |
             for ORB in src/*; do
+              echo >> ${ORB}/orb.yaml
               orbname=$(basename $ORB)
-              # pull dev:latest
               circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest > $orbname.latest
               if [[ $(diff ${ORB}/orb.yaml $orbname.latest) ]]; then
-                echo >> ${ORB}/orb.yaml
-                diff ${ORB}/orb.yaml $orbname.latest > output.txt
-                cat output.txt
                 echo "dev-release of $ORB"
                 # dev release using SHA1 as release version
                 circleci orb publish ${ORB}/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN
