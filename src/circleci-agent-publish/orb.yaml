@@ -1,68 +1,57 @@
 ---
 version: 2.1
 
-description: Jobs and Commands for building, testing, and publishing standard circleci docker build agents
+description: |
+  Standard jobs for building, testing, and publishing custom circleci docker executor images. Assumes use of
+  InSpec framework for testing image configuration, including a CIS based Dockerfile configuration scan (sec. 4).
+  See https://github.com/feedyard/circleci-remote-docker for an example test configuration. Depends on other
+  feedyard orbs. Incoporates concepts from circleci/docker-publish@0.1.2.
 
 examples:
 
-  standard_tbd_workflow:
+  standard_workflow:
     description: |
       A standard TBD circleci docker agent pipeline workflow, where git push triggers build, test, and push.
-      Dockerfile is in the root of your repository, image name is same name as your repository, and then
-      pushing to the default docker registry (at quay.io).
+      Dockerfile is in the root of your repository, image name is same name as your repository, and
+      pushing to a default docker registry at quay.io
+
     usage:
       version: 2.1
 
       orbs:
-        docker-agents: feedyard/docker-agents@1.0.0
+        circle-agent: feedyard/circleci-agent-publish@1.0.0
 
       workflows:
         circleci-remote-docker-image-pipeline:
           jobs:
-            - docker-agents/publish:
+            - circle-agent/dev-release:
                 filters:
                   branches:
                     only: master
                   tags:
                     ignore: /.*/
-            - docker-agents/release:
+            - circle-agent/publish:
                 filters:
                   branches:
                     ignore: /.*/
                   tags:
                     only: /.*/
 
-  custom_name_and_tag:
-    description: Build, test, and push docker image with a custom name and tag.
+  using_custom_values:
+    description: Build, test, and push docker image to a custom registry with a custom name and tag.
     usage:
       version: 2.1
 
       orbs:
-        docker-agents: feedyard/docker-agents@1.0.0
+        circle-agent: feedyard/circleci-agent-publish@1.0.0
 
       workflows:
-        build_and_publish_docker_image:
+        build_and_release_docker_image:
           jobs:
-            - docker-agents/publish:
+            - circle-agent/dev-release:
+                registry: my.docker.registry
                 image: my/image
                 tag: my_tag
-
-  custom_registry_and_dockerfile:
-    description: |
-      Build,test, and push docker image with a non standard Dockerfile and to a
-      custom registry.
-    usage:
-      version: 2.1
-
-      orbs:
-        docker-agents: feedyard/docker-agents@1.0.0
-
-      workflows:
-        build_and_publish_docker_image:
-          jobs:
-            - docker-agents/publish:
-                registry: my.docker.registry
-                dockerfile: path/to/MyDockerFile
 
   life_cycle_hooks:
     description: |
@@ -73,12 +62,12 @@ examples:
       version: 2.1
 
       orbs:
-        docker-agents: feedyard/docker-agentsh@1.0.0
+        circle-agent: feedyard/circleci-agent-publish@1.0.0
 
       workflows:
         docker_with_lifecycle:
           jobs:
-            - docker-agents/publish:
+            - circle-agent/publish:
                 after_checkout:
                   - run:
                       name: Do this after checkout.
@@ -92,41 +81,42 @@ examples:
                       name: Do this after the build.
                       command: echo "Did this after the build"
 
+orbs:
+  common-tasks: feedyard/common-pipeline-tasks@0.1.3
+
 executors:
 
-  circleci-base:
-    description: The docker container to use when running docker-agents jobs
+  circleci-base-agent:
+    description: The docker container to use when running circleci-agent-publish jobs
     docker:
       - image: quay.io/feedyard/circleci-base-agent
-    working_directory: ~/$CIRCLE_PROJECT_REPONAME
     environment:
       REGISTRY: quay.io
-      DOCKERFILE: Dockerfile
       INSPEC_FOLDER: profiles
       INSPEC_TEST_CIS: cis-docker
       BASH_ENV: local.env
 
 commands:
 
-  decrypt-secrets:
-    description: Example method for passing simple secrets
-    steps:
-      - run:
-          name: decrypt secrets
-          command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_PIPELINE_KEY
+#  decrypt-secrets:
+#    description: Example method for passing simple secrets
+#    steps:
+#      - run:
+#          name: decrypt secrets
+#          command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_PIPELINE_KEY
 
   setup-registry:
     description: |
-      confirm $DOCKER_LOGIN and $DOCKER_PASSWORD environment variables are set
-      run docker login to ensure that you can push the built image
+      confirm $DOCKER_LOGIN and $DOCKER_PASSWORD environment variables are set and
+      run docker login to ensure that you can push the build image
     parameters:
       registry:
-        description: Name of registry to use. Defaults to $REGISTRY.
+        description: Docker registry
         type: string
         default: $REGISTRY
     steps:
       - run:
-          name: Check Docker registry environment variables
+          name: Confirm Docker registry environment variables are configured and correct
           command: |
             if [[ -z "${DOCKER_LOGIN}" ]]; then
               echo "DOCKER_LOGIN is not set, will not be able to push image."
@@ -145,23 +135,23 @@ commands:
     description: Build and SHA1 tag docker image.
     parameters:
       dockerfile:
-        description: Name of dockerfile to use. Defaults to Dockerfile.
+        description: Name of dockerfile
         type: string
-        default: $DOCKERFILE
+        default: Dockerfile
       path:
-        description: Path to the directory containing your Dockerfile and build context. Defaults to . (working directory).
+        description: Path to the directory containing your Dockerfile and build context
         type: string
         default: .
       image:
-        description: Name of image to create. Defaults to a combination of $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.
+        description: Name of image to create
         type: string
         default: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
       tag:
-        description: Value for tag to use. Defaults to $CIRCLE_SHA1.
+        description: Value for tag
         type: string
         default: $CIRCLE_SHA1
       registry:
-        description: Name of registry to use. Defaults to $REGISTRY.
+        description: Docker registry
         type: string
         default: $REGISTRY
     steps:
@@ -173,40 +163,40 @@ commands:
     description: Default InSpec test of CIS Docker_benchmarks and custom container configuration
     parameters:
       inspec-folder:
-        description: Name of folder containing inspec tests. Defaults to $INSPEC_FOLDER.
+        description: Path of folder containing inspec tests
         type: string
         default: $INSPEC_FOLDER
       inspec-test-cis:
-        description: Name of CIS benchmark test. Defaults to $INSPEC_TEST_CIS.
+        description: CIS benchmark test
         type: string
         default: $INSPEC_TEST_CIS
       inspec-test-container:
-        description: Name of routine container test. Defaults to $CIRCLE_PROJECT_REPONAME.
+        description: Image configuration test
         type: string
         default: $CIRCLE_PROJECT_REPONAME
       image:
-        description: Name of image to create. Defaults to a combination of $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.
+        description: Name of image
         type: string
         default: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
       tag:
-        description: Value for tag to use. Defaults to $CIRCLE_SHA1.
+        description: Image tag
         type: string
         default: $CIRCLE_SHA1
       registry:
-        description: Name of registry to use. Defaults to $REGISTRY.
+        description: Docker registry to use
         type: string
         default: $REGISTRY
     steps:
       - run:
-          name: Standard inspec CIS Dockerfile test
+          name: Standard InSpec CIS Dockerfile test
           command: |
             set -euo pipefail
             inspec exec --no-distinct-exit $INSPEC_FOLDER/$INSPEC_TEST_CIS
       - run:
-          name: Standard inspec running container configuration test
+          name: Standard InSpec container configuration testing
           command: |
             set -euo pipefail
-            CID="$(docker run -it -d --entrypoint ash << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>)"
+            CID="$(docker run -it -d --entrypoint bash << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>)"
             inspec exec $INSPEC_FOLDER/$CIRCLE_PROJECT_REPONAME/ -t docker://$CID
             docker rm -f $CID
 
@@ -214,19 +204,19 @@ commands:
     description: Pull and version Tag a Docker Image.
     parameters:
       image:
-        description: Name of image to create. Defaults to a combination of $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.
+        description: Name of image to pull
         type: string
         default: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
       pull-tag:
-        description: Value for tag to use. Defaults to $CIRCLE_SHA1.
+        description: dev-release tag to pull
         type: string
         default: $CIRCLE_SHA1
       tag:
-        description: Value for tag to use. Defaults to $CIRCLE_TAG.
+        description: Value for Publish tag
         type: string
         default: $CIRCLE_TAG
       registry:
-        description: Name of registry to use. Defaults to $REGISTRY.
+        description: Docker registry
         type: string
         default: $REGISTRY
     steps:
@@ -243,15 +233,15 @@ commands:
     description: Deploy docker image to registry.
     parameters:
       registry:
-        description: Name of registry to use. Defaults to $REGISTRY.
+        description: Docker registry
         type: string
         default: $REGISTRY
       image:
-        description: Name of image to create. Defaults to a combination of $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.
+        description: Name of image to push
         type: string
         default: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
       tag:
-        description: Value for tag to use. Defaults to $CIRCLE_SHA1.
+        description: Value for tag
         type: string
         default: $CIRCLE_SHA1
     steps:
@@ -261,40 +251,40 @@ commands:
 
 jobs:
 
-  publish:
+  dev-release:
     description: Standard build, test, and push of circleci remote docker agent image.
-    executor: circleci-base
+    executor: circleci-base-agent
     parameters:
       dockerfile:
-        description: Name of dockerfile to use. Defaults to Dockerfile.
+        description: Name of dockerfile
         type: string
-        default: $DOCKERFILE
+        default: Dockerfile
       path:
-        description: Path to the directory containing your Dockerfile and build context. Defaults to . (working directory).
+        description: Path to the directory containing your Dockerfile and build context
         type: string
         default: .
       image:
-        description: Name of image to create. Defaults to a combination of $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.
+        description: Name of image to create
         type: string
         default: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
       tag:
-        description: Value for tag to use. Defaults to $CIRCLE_SHA1.
+        description: Value for tag
         type: string
         default: $CIRCLE_SHA1
       registry:
-        description: Name of registry to use. Defaults to $REGISTRY.
+        description: Docker registry to use
         type: string
         default: $REGISTRY
       inspec-folder:
-        description: Name of folder containing inspec tests. Defaults to $INSPEC_FOLDER.
+        description: Path to folder containing inspec tests
         type: string
         default: $INSPEC_FOLDER
       inspec-test-cis:
-        description: Name of CIS benchmark test. Defaults to $INSPEC_TEST_CIS.
+        description: CIS benchmark test
         type: string
         default: $INSPEC_TEST_CIS
       inspec-test-container:
-        description: Name of routine container test. Defaults to $CIRCLE_PROJECT_REPONAME.
+        description: Image configuration test
         type: string
         default: $CIRCLE_PROJECT_REPONAME
       after_checkout:
@@ -316,7 +306,7 @@ jobs:
           condition: << parameters.after_checkout >>
           steps: << parameters.after_checkout >>
       - setup_remote_docker
-      - decrypt-secrets
+      - common-tasks/decrypt-env
       - setup-registry:
           registry: << parameters.registry >>
       - when:
@@ -346,23 +336,23 @@ jobs:
           tag: << parameters.tag >>
 
   release:
-    description: Standard release-tag and push of circleci remote docker agent SHA1 image.
-    executor: circleci-base
+    description: Standard version-tag and push of circleci remote docker agent SHA1 image.
+    executor: circleci-base-agent
     parameters:
       image:
-        description: Name of image to create. Defaults to a combination of $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.
+        description: Name of image to Publish
         type: string
         default: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
       pull-tag:
-        description: Value for tag of image to pull. Defaults to $CIRCLE_SHA1.
+        description: dev-release tag to pull
         type: string
         default: $CIRCLE_SHA1
       tag:
-        description: Value for tag to use. Defaults to $CIRCLE_TAG.
+        description: Value for Publish tag
         type: string
         default: $CIRCLE_TAG
       registry:
-        description: Name of registry to use. Defaults to $REGISTRY.
+        description: Docker registry
         type: string
         default: $REGISTRY
       after_checkout:
@@ -384,7 +374,7 @@ jobs:
           condition: << parameters.after_checkout >>
           steps: << parameters.after_checkout >>
       - setup_remote_docker
-      - decrypt-secrets
+      - common-tasks/decrypt-env
       - setup-registry:
           registry: << parameters.registry >>
       - when:
