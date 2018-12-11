@@ -46,6 +46,7 @@ jobs:
               # pull dev:latest
               circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest > $orbname.latest
               if [[ $(diff ${ORB}/orb.yaml $orbname.latest) ]]; then
+                echo >> ${ORB}/orb.yaml
                 diff ${ORB}/orb.yaml $orbname.latest > output.txt
                 cat output.txt
                 echo "dev-release of $ORB"
