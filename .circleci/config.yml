@@ -48,10 +48,10 @@ jobs:
             for ORB in src/*; do
               orbname=$(basename $ORB)
               circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest > $orbname.latest
-              if [[ $(diff <(printf %s "$(< ${ORB}/orb.yaml)") <(printf %s "$(< $orbname.latest)")) ]]; then
+              if [[ $(diff <(printf %s "$(< $ORB/orb.yaml)") <(printf %s "$(< $orbname.latest)")) ]]; then
                 echo "dev-release of $CIRCLE_PROJECT_USERNAME/$orbname"
-                circleci orb publish $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN
-                circleci orb publish $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest --token $CIRCLECI_API_TOKEN
+                circleci orb publish $ORB/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN
+                circleci orb publish $ORB/orb.yaml $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest --token $CIRCLECI_API_TOKEN
               fi
             done
 
@@ -69,7 +69,7 @@ jobs:
             for ORB in src/*; do
               orbname=$(basename $ORB)
               circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@volatile > $orbname.volatile
-              if [[ $(diff <(printf %s "$(< ${ORB}/orb.yaml)") <(printf %s "$(< $orbname.volatile)")) ]]; then
+              if [[ $(diff <(printf %s "$(< $ORB/orb.yaml)") <(printf %s "$(< $orbname.volatile)")) ]]; then
                 echo "publish $CIRCLE_PROJECT_USERNAME/$orbname"
                 circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest patch --token $CIRCLECI_API_TOKEN
               fi
