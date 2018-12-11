@@ -1,7 +1,7 @@
 ---
 version: 2.1
 
-description: feedyard standard circleci pipeline commands and jobs (feedyard conventions)
+description: basic feedyard circleci pipeline commands and jobs (feedyard conventions)
 
 commands:
 

@@ -68,9 +68,11 @@ jobs:
           command: |
             for ORB in src/*; do
               orbname=$(basename $ORB)
+              semver='patch'
               circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@volatile > $orbname.volatile
               if [[ $(diff <(printf %s "$(< $ORB/orb.yaml)") <(printf %s "$(< $orbname.volatile)")) ]]; then
                 echo "publish $CIRCLE_PROJECT_USERNAME/$orbname"
-                circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest patch --token $CIRCLECI_API_TOKEN
+                ls $ORB/minor && semver=minor; ls $ORB/major && semver=major
+                circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest $semver --token $CIRCLECI_API_TOKEN
               fi
             done
