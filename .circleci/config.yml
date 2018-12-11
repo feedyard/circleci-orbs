@@ -34,10 +34,10 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - common/decrypt-env
-#      - run:
-#          name: decrypt secrets
-#          command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
+#      - common/decrypt-env
+      - run:
+          name: decrypt secrets
+          command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_CIRCLECI_ENC
       - run:
           name: validate yaml
           command: yamllint .

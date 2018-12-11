@@ -9,8 +9,9 @@ commands:
     description: decrypt env file
     parameters:
       encryption-key:
-        description: Encryption key
+        description: Encryption key. Defaults to $FEEDYARD_CIRCLECI_ENC
         type: string
+        default: $FEEDYARD_CIRCLECI_ENC
       encoded-file:
         description: Name of local, encrypted file. Defaults to env.ci
         type: string
