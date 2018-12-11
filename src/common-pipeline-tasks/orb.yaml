@@ -21,5 +21,5 @@ commands:
         default: local.env
     steps:
       - run:
-          name: decrypt secrets
+          name: decrypt local file
           command: openssl aes-256-cbc -d -in << parameters.encoded-file >> -out << parameters.decoded-file >> -k <<parameters.encryption-key >>
