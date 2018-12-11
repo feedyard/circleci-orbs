@@ -44,8 +44,10 @@ jobs:
             for ORB in src/*; do
               orbname=$(basename $ORB)
               circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest > $orbname.latest
-              # printf %s "$(< ${ORB}/orb.yaml)" > $orbname.compare
-              diff <(printf %s "$(< ${ORB}/orb.yaml)") <printf %s "$(< $orbname.latest)"
+              if [[ $(diff <(printf %s "$(< ${ORB}/orb.yaml)") <(printf %s "$(< $orbname.latest)")) ]]; then
+                circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:$CIRCLE_SHA1 --token $CIRCLECI_API_TOKEN
+                circleci orb publish $CIRCLE_PROJECT_USERNAME/$ORB@dev:latest --token $CIRCLECI_API_TOKEN
+              fi
             done
 
   publish:
@@ -59,18 +61,10 @@ jobs:
       - run:
           name: publish incremental orb version
           command: |
-            LAST_SUCCESSFUL_COMMIT=$(curl -Ss -u "$CIRCLECI_API_TOKEN:" "https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME?filter=completed&limit=1" | jq -r '.[0]["vcs_revision"]')
             for ORB in src/*; do
-              if [[ $(git diff $LAST_SUCCESSFUL_COMMIT:${ORB}/orb.yaml) ]]; then
-                orbname=$(basename $ORB)
-                semver='patch'
-                if [[ -e ${ORB}/minor ]]; then
-                  semver='minor'
-                fi
-                if [[ -e ${ORB}/major ''; then
-                  semver='major'
-                fi
-                # dev release using 'latest' as release version
-                circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$orbname@dev:latest $semver --token $CIRCLECI_API_TOKEN
+              orbname=$(basename $ORB)
+              circleci orb source $CIRCLE_PROJECT_USERNAME/$orbname@volatile > $orbname.volatile
+              if [[ $(diff <(printf %s "$(< ${ORB}/orb.yaml)") <(printf %s "$(< $orbname.volatile)")) ]]; then
+                circleci orb publish promote $CIRCLE_PROJECT_USERNAME/$ORB@dev:latest patch --token $CIRCLECI_API_TOKEN
               fi
             done
