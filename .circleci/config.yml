@@ -37,7 +37,11 @@ jobs:
           command: yamllint .
       - run:
           name: validate orbs
-          command: ash scripts/validate_orbs.sh
+          command: |
+            for ORB in src/*; do
+              echo "Validating $ORB ..."
+              circleci orb validate $ORB/orb.yaml
+            done
       - run:
           name: SHA1/latest development release
           command: |

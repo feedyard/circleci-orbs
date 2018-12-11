@@ -5,8 +5,8 @@ description: feedyard standard circleci pipeline commands and jobs (feedyard con
 
 commands:
 
-  decrypt-local-secrets:
-    description: decrypt standard local secrets file
+  decrypt-env:
+    description: decrypt env file
     parameters:
       encryption-key:
         description: Encryption key
@@ -16,7 +16,7 @@ commands:
         type: string
         default: env.ci
       decoded-file:
-        description: Decrypted output filename. Defaults to local.env
+        description: Name pf decrypted output file. Defaults to local.env
         type: string
         default: local.env
     steps:
