@@ -335,7 +335,7 @@ jobs:
           image: << parameters.image >>
           tag: << parameters.tag >>
 
-  release:
+  publish:
     description: Standard version-tag and push of circleci remote docker agent SHA1 image.
     executor: circleci-base-agent
     parameters:
