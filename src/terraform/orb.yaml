@@ -88,7 +88,7 @@ jobs:
       statefile:
         description: by convention, state files are named for the domain-bound they manage
         type: string
-        default: $STATEFILE
+        default: state
       account:
         description: s3 bucket name
         type: string
