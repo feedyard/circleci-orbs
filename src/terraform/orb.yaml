@@ -16,6 +16,7 @@ executors:
     description: The circleci agent container to use when running aws infrastructure pipelines jobs
     docker:
       - image: quay.io/feedyard/circleci-infra-agent
+    working_directory: ~/project
     environment:
       BASH_ENV: local.env
 
@@ -75,7 +76,6 @@ jobs:
   plan:
     description: Run terraform plan <enviroment_name.json>
     executor: circleci-infra-agent
-    working_directory: ~/project
     parameters:
       prefix:
         description: prefix used to identify product or team managing the infrastructure
