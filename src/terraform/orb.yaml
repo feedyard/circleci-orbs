@@ -1,0 +1,119 @@
+---
+version: 2.1
+
+description: |
+  Feedyard terraform is an example set of commands and jobs for managing terraform infrastructure pipelines.
+  Orb source code - https://github.com/feedyard/circleci-orbs/blob/master/src/common-pipeline-tasks/orb.yaml
+
+examples:
+
+orbs:
+  common-tasks: feedyard/common-pipeline-tasks@0.1.3
+
+executors:
+
+  circleci-infra-agent:
+    description: The circleci agent container to use when running aws infrastructure pipelines jobs
+    docker:
+      - image: quay.io/feedyard/circleci-infra-agent
+    environment:
+      BASH_ENV: local.env
+
+commands:
+
+  setup-job:
+    description: prepare terraform job
+    steps:
+      - checkout
+      - setup_remote_docker
+      - common-tasks/decrypt-env
+
+  setup-backend:
+    description: write terraform backend.conf to reference remote state files
+    parameters:
+      prefix:
+        description: prefix used to identify product or team managing the infrastructure
+        type: string
+        default: $PREFIX
+      pipeline:
+        description: by convention, state info for an infrastructure pipeline is named as the repo containing the pipeline code
+        type: string
+        default: $CIRCLE_PROJECT_REPONAME
+      statefile:
+        description: by convention, state files are named for the domain-bound they manage
+        type: string
+        default: state
+      account:
+        description: s3 bucket name
+        type: string
+        default: $DEFAULT_ACCOUNT
+      env:
+        description: infrastructure environment name
+        type: string
+        default: $DEFAULT_ENV
+      region:
+        description: default aws region
+        type: string
+        default: $DEFAULT_REGION
+      profile:
+        description: ~/.aws/credentials profile to use. Credentials file setup separately
+        type: string
+        default: $DEFAULT_PROFILE
+    steps:
+      - run:
+          name: write terraform backend.conf
+          # by convention the terraform state file naming is bucket/pipeline/environment/filename.tfstate
+          # bucket = $PREFIX-$AWS_ACCOUNT-tf-state
+          command: |
+            echo "bucket=<< parameters.prefix >>-<< parameters.account >>-tf-state" > backend.conf
+            echo "key=<< parameters.pipeline >>/<< parameters.env >>/<< parameters.statefile >>.tfstate" >> backend.conf
+            echo "region=<< parameters.region >>" >> backend.conf
+            echo "profile=<< parameters.profile >>" >> backend.conf
+
+jobs:
+
+  plan:
+    description: Run terraform plan <enviroment_name.json>
+    executor: circleci-infra-agent
+    parameters:
+      prefix:
+        description: prefix used to identify product or team managing the infrastructure
+        type: string
+        default: $PREFIX
+      pipeline:
+        description: by convention, state info for an infrastructure pipeline is named as the repo containing the pipeline code
+        type: string
+        default: $CIRCLE_PROJECT_REPONAME
+      statefile:
+        description: by convention, state files are named for the domain-bound they manage
+        type: string
+        default: $STATEFILE
+      account:
+        description: s3 bucket name
+        type: string
+        default: $DEFAULT_ACCOUNT
+      env:
+        description: infrastructure environment name
+        type: string
+        default: $DEFAULT_ENV
+      region:
+        description: default aws region
+        type: string
+        default: $DEFAULT_REGION
+      profile:
+        description: ~/.aws/credentials profile to use. Credentials file setup separately
+        type: string
+        default: $DEFAULT_PROFILE
+    steps:
+      - setup-job
+      - setup-backend:
+          prefix: << parameters.prefix >>
+          pipeline: << parameters.pipeline >>
+          statefile: << parameters.statefile >>
+          account: << parameters.account >>
+          env: << parameters.env >>
+          region: << parameters.region >>
+          profile: << parameters.profile >>
+      - run:
+          name: terraform init
+          command: terraform init -backend-config ./backend.conf

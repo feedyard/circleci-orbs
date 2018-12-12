@@ -11,3 +11,4 @@ def dec(ctx, encoded_file='env.ci', file='local.env'):
 @task
 def validate(ctx, path):
     ctx.run('yamllint {}'.format(path))
+    ctx.run('circleci orb validate {}'.format(path))
