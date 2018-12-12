@@ -75,6 +75,7 @@ jobs:
   plan:
     description: Run terraform plan <enviroment_name.json>
     executor: circleci-infra-agent
+    working_directory: ~/project
     parameters:
       prefix:
         description: prefix used to identify product or team managing the infrastructure
