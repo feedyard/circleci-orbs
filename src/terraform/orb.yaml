@@ -65,6 +65,7 @@ commands:
           name: write terraform backend.conf
           # by convention the terraform state file naming is bucket/pipeline/environment/filename.tfstate
           # bucket = $PREFIX-$AWS_ACCOUNT-tf-state
+          #
           command: |
             echo "bucket=<< parameters.prefix >>-<< parameters.account >>-tf-state" > backend.conf
             echo "key=<< parameters.pipeline >>/<< parameters.env >>/<< parameters.statefile >>.tfstate" >> backend.conf
