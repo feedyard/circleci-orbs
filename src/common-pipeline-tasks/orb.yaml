@@ -16,13 +16,28 @@ examples:
       version: 2.1
       orbs:
         common-tasks: feedyard/common-pipeline-tasks@0.1.1
-      workflows:
-        pipeline:
-          jobs:
+      jobs:
+        build:
+          steps:
             - common-tasks/decrypt-env:
                 encryption-key: $ENV_VAR
                 encoded-file: filename.in
                 decoded-file: filename.out
+
+  standard_aws_credentials:
+    description: |
+      Use
+    usage:
+      version: 2.1
+      orbs:
+        common-tasks: feedyard/common-pipeline-tasks@0.1.4
+      jobs:
+        build:
+          steps:
+            - common-tasks/setup-aws-credentials:
+                aws-access-key-id: $ENV_VAR1
+                aws-secret-access-key: $ENV_VAR2
+                aws-region: $ENV_VAR3
 
 commands:
 
