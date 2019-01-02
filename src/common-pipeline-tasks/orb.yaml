@@ -15,9 +15,11 @@ examples:
     usage:
       version: 2.1
       orbs:
-        common-tasks: feedyard/common-pipeline-tasks@0.1.1
+        common-tasks: feedyard/common-pipeline-tasks@0.1.3
       jobs:
         build:
+          docker:
+            - image: quay.io/feedyard/circleci-infra-agent
           steps:
             - common-tasks/decrypt-env:
                 encryption-key: $ENV_VAR
@@ -30,9 +32,11 @@ examples:
     usage:
       version: 2.1
       orbs:
-        common-tasks: feedyard/common-pipeline-tasks@0.1.4
+        common-tasks: feedyard/common-pipeline-tasks@0.1.3
       jobs:
         build:
+          docker:
+            - image: quay.io/feedyard/circleci-infra-agent
           steps:
             - common-tasks/setup-aws-credentials:
                 aws-access-key-id: $ENV_VAR1
