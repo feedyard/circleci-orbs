@@ -45,3 +45,51 @@ commands:
       - run:
           name: decrypt local file
           command: openssl aes-256-cbc -d -in << parameters.encoded-file >> -out << parameters.decoded-file >> -k <<parameters.encryption-key >>
+
+  setup-aws-credentials:
+    description: Setup default ~/.aws style credentials
+    parameters:
+      aws-access-key-id:
+        description: aws access key id
+        type: string
+        default: $AWS_ACCESS_KEY_ID
+      aws-secret-access-key:
+        description: aws secret access key
+        type: string
+        default: $AWS_SECRET_ACCESS_KEY
+      aws-region:
+        description: default aws region
+        type: string
+        default: $AWS_REGION
+      aws-role:
+        description: assume aws role
+        type: string
+    steps:
+      - when:
+          condition: << parameters.aws-role >>
+          steps:
+            - run:
+                name: get aws role token
+                command: |
+                  TMP="$(aws sts assume-role --output json --role-arn << parameters.aws-role >> --role-session-name $CIRCLE_PROJECT_REPONAME || { echo 'sts failure!' ; exit 1; })"
+                  AWS_ACCESS_KEY_ID=$(echo $TMP | jq -r ".Credentials.AccessKeyId")
+                  AWS_SECRET_ACCESS_KEY=$(echo $TMP | jq -r ".Credentials.SecretAccessKey")
+                  AWS_SESSION_TOKEN=$(echo $TMP | jq -r ".Credentials.SessionToken")
+            - run:
+                name: setup assumed-role ~/.aws credentials
+                command: |
+                  echo "[default]" > ~/.aws/credentials
+                  echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >>  ~/.aws/credentials
+                  echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >>  ~/.aws/credentials
+                  echo "aws_session_token=$AWS_SESSION_TOKEN" >>  ~/.aws/credentials
+                  echo "region=<< parameters.aws-region >>" >>  ~/.aws/credentials
+      - unless:
+          condition: << parameters.aws-role >>
+          steps:
+            - run:
+                name: setup standard ~/.aws credentials
+                command: |
+                  echo "[default]" > ~/.aws/credentials
+                  echo "aws_access_key_id=<< parameters.aws-access-key-id >>" >>  ~/.aws/credentials
+                  echo "aws_secret_access_key=<< parameters.aws-secret-access-key >>" >>  ~/.aws/credentials
+                  echo "region=<< parameters.aws-region >>" >>  ~/.aws/credentials
