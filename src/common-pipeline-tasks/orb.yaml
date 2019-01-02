@@ -83,6 +83,7 @@ commands:
       aws-role:
         description: assume aws role
         type: string
+        default: ''
     steps:
       - when:
           condition: << parameters.aws-role >>
