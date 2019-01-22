@@ -46,7 +46,7 @@ examples:
                   - approve-qa-release-plan
 
 orbs:
-  common-tasks: wwgrainger/common-pipeline-tasks@0.0.2
+  common-tasks: feedyard/common-pipeline-tasks@dev:latest
 
 executors:
 
