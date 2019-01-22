@@ -15,33 +15,14 @@ examples:
     usage:
       version: 2.1
       orbs:
-        common-tasks: feedyard/common-pipeline-tasks@0.1.3
-      jobs:
-        build:
-          docker:
-            - image: quay.io/feedyard/circleci-infra-agent
-          steps:
+        common-tasks: feedyard/common-pipeline-tasks@0.1.1
+      workflows:
+        pipeline:
+          jobs:
             - common-tasks/decrypt-env:
                 encryption-key: $ENV_VAR
                 encoded-file: filename.in
                 decoded-file: filename.out
-
-  standard_aws_credentials:
-    description: |
-      Use
-    usage:
-      version: 2.1
-      orbs:
-        common-tasks: feedyard/common-pipeline-tasks@0.1.3
-      jobs:
-        build:
-          docker:
-            - image: quay.io/feedyard/circleci-infra-agent
-          steps:
-            - common-tasks/setup-aws-credentials:
-                aws-access-key-id: $ENV_VAR1
-                aws-secret-access-key: $ENV_VAR2
-                aws-region: $ENV_VAR3
 
 commands:
 
@@ -63,7 +44,7 @@ commands:
     steps:
       - run:
           name: decrypt local file
-          command: openssl aes-256-cbc -d -in << parameters.encoded-file >> -out << parameters.decoded-file >> -k <<parameters.encryption-key >>
+          command: openssl aes-256-cbc -d -in << parameters.encoded-file >> -out << parameters.decoded-file >>
 
   setup-aws-credentials:
     description: Setup default ~/.aws style credentials
@@ -89,15 +70,13 @@ commands:
           condition: << parameters.aws-role >>
           steps:
             - run:
-                name: get aws role token
+                name: setup assumed-role ~/.aws credentials
                 command: |
+                  set -euo pipefail
                   TMP="$(aws sts assume-role --output json --role-arn << parameters.aws-role >> --role-session-name $CIRCLE_PROJECT_REPONAME || { echo 'sts failure!' ; exit 1; })"
                   AWS_ACCESS_KEY_ID=$(echo $TMP | jq -r ".Credentials.AccessKeyId")
                   AWS_SECRET_ACCESS_KEY=$(echo $TMP | jq -r ".Credentials.SecretAccessKey")
                   AWS_SESSION_TOKEN=$(echo $TMP | jq -r ".Credentials.SessionToken")
-            - run:
-                name: setup assumed-role ~/.aws credentials
-                command: |
                   mkdir ~/.aws
                   echo "[default]" > ~/.aws/credentials
                   echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >>  ~/.aws/credentials
@@ -110,6 +89,7 @@ commands:
             - run:
                 name: setup standard ~/.aws credentials
                 command: |
+                  set -euo pipefail
                   mkdir ~/.aws
                   echo "[default]" > ~/.aws/credentials
                   echo "aws_access_key_id=<< parameters.aws-access-key-id >>" >>  ~/.aws/credentials

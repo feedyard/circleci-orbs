@@ -98,13 +98,6 @@ executors:
 
 commands:
 
-#  decrypt-secrets:
-#    description: Example method for passing simple secrets
-#    steps:
-#      - run:
-#          name: decrypt secrets
-#          command: openssl aes-256-cbc -d -in env.ci -out local.env -k $FEEDYARD_PIPELINE_KEY
-
   setup-registry:
     description: |
       confirm $DOCKER_LOGIN and $DOCKER_PASSWORD environment variables are set and
