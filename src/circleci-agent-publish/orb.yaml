@@ -82,7 +82,7 @@ examples:
                       command: echo "Did this after the build"
 
 orbs:
-  common-tasks: feedyard/common-pipeline-tasks@0.1.3
+  common-tasks: feedyard/common-pipeline-tasks@0.1.4
 
 executors:
 
