@@ -278,82 +278,82 @@ jobs:
                   AWS_REGION: << parameters.aws-region >>
                 command: rspec test/integration/
 
-    destroy:
-      description: Run terraform destroy for << parameters.env >>
-      executor: circleci-infra-agent
-      parameters:
-        prefix:
-          description: prefix used to identify product or team managing the infrastructure
-          type: string
-          default: $PREFIX
-        account:
-          description: s3 bucket name
-          type: string
-          default: $DEFAULT_ACCOUNT
-        pipeline:
-          description: by convention, state info for an infrastructure pipeline is named as the repo containing the pipeline code
-          type: string
-          default: $CIRCLE_PROJECT_REPONAME
-        env:
-          description: infrastructure environment name
-          type: string
-          default: $DEFAULT_ENV
-        statefile:
-          description: by convention, state files are named terraform
-          type: string
-          default: terraform
-        aws-access-key-id:
-          description: aws access key id
-          type: string
-          default: $AWS_ACCESS_KEY_ID
-        aws-secret-access-key:
-          description: aws secret access key
-          type: string
-          default: $AWS_SECRET_ACCESS_KEY
-        aws-region:
-          description: aws region provisioned and tested
-          type: string
-          default: $AWS_REGION
-        aws-role:
-          description: assume aws role
-          type: string
-          default: ''
-        bucket-region:
-          description: aws region of terrafrom state s3 bucket
-          type: string
-          default: $BUCKET_REGION
-        working-directory:
-          description: specify a specific folder in which to run the commands
-          type: string
-          default: '~/project'
-        before-terraform:
-          description: Optional steps to run before running terraform destroy.
-          type: steps
-          default: []
-        after-terraform:
-          description: Optional steps to run after running terraform destroy.
-          type: steps
-          default: []
-      steps:
-        - setup-job
-        - common-tasks/setup-aws-credentials:
-            aws-access-key-id: << parameters.aws-access-key-id >>
-            aws-secret-access-key: << parameters.aws-secret-access-key >>
-            aws-region: << parameters.aws-region >>
-            aws-role: << parameters.aws-role >>
-        - when:
-            name: Run before-terraform lifecycle hook steps
-            condition: << parameters.before-terraform >>
-            steps: << parameters.before-terraform >>
-        - run:
-            name: terraform init
-            working_directory: << parameters.working-directory >>
-            command: terraform init -backend-config="key=<< parameters.pipeline >>/<< parameters.env >>/<< parameters.statefile >>.tfstate" -backend-config="bucket=<< parameters.prefix >>-<< parameters.account >>-tf-state" -backend-config="region=<< parameters.bucket-region >>"
-        - run:
-            name: terraform destroy
-            working_directory: << parameters.working-directory >>
-            command: terraform destroy -var-file="<< parameters.env >>.json" -auto-approve
-        - when:
-            name: Run after-terraform lifecycle hook steps
-            condition: << parameters.after-terraform >>
-            steps: << parameters.after-terraform >>
+  destroy:
+    description: Run terraform destroy for << parameters.env >>
+    executor: circleci-infra-agent
+    parameters:
+      prefix:
+        description: prefix used to identify product or team managing the infrastructure
+        type: string
+        default: $PREFIX
+      account:
+        description: s3 bucket name
+        type: string
+        default: $DEFAULT_ACCOUNT
+      pipeline:
+        description: by convention, state info for an infrastructure pipeline is named as the repo containing the pipeline code
+        type: string
+        default: $CIRCLE_PROJECT_REPONAME
+      env:
+        description: infrastructure environment name
+        type: string
+        default: $DEFAULT_ENV
+      statefile:
+        description: by convention, state files are named terraform
+        type: string
+        default: terraform
+      aws-access-key-id:
+        description: aws access key id
+        type: string
+        default: $AWS_ACCESS_KEY_ID
+      aws-secret-access-key:
+        description: aws secret access key
+        type: string
+        default: $AWS_SECRET_ACCESS_KEY
+      aws-region:
+        description: aws region provisioned and tested
+        type: string
+        default: $AWS_REGION
+      aws-role:
+        description: assume aws role
+        type: string
+        default: ''
+      bucket-region:
+        description: aws region of terrafrom state s3 bucket
+        type: string
+        default: $BUCKET_REGION
+      working-directory:
+        description: specify a specific folder in which to run the commands
+        type: string
+        default: '~/project'
+      before-terraform:
+        description: Optional steps to run before running terraform destroy.
+        type: steps
+        default: []
+      after-terraform:
+        description: Optional steps to run after running terraform destroy.
+        type: steps
+        default: []
+    steps:
+      - setup-job
+      - common-tasks/setup-aws-credentials:
+          aws-access-key-id: << parameters.aws-access-key-id >>
+          aws-secret-access-key: << parameters.aws-secret-access-key >>
+          aws-region: << parameters.aws-region >>
+          aws-role: << parameters.aws-role >>
+      - when:
+          name: Run before-terraform lifecycle hook steps
+          condition: << parameters.before-terraform >>
+          steps: << parameters.before-terraform >>
+      - run:
+          name: terraform init
+          working_directory: << parameters.working-directory >>
+          command: terraform init -backend-config="key=<< parameters.pipeline >>/<< parameters.env >>/<< parameters.statefile >>.tfstate" -backend-config="bucket=<< parameters.prefix >>-<< parameters.account >>-tf-state" -backend-config="region=<< parameters.bucket-region >>"
+      - run:
+          name: terraform destroy
+          working_directory: << parameters.working-directory >>
+          command: terraform destroy -var-file="<< parameters.env >>.json" -auto-approve
+      - when:
+          name: Run after-terraform lifecycle hook steps
+          condition: << parameters.after-terraform >>
+          steps: << parameters.after-terraform >>
