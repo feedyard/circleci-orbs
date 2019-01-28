@@ -108,14 +108,14 @@ commands:
           name: Lint YAML sources
           command: yamllint << parameters.path >>
 
-    lint-dockerfile:
-      description: lint Dockerfiles
-      parameters:
-        path:
-          description: Path to Dockerfile. Supports wildcards.
-          type: string
-          default: "*Dockerfile*"
-      steps:
-        - run:
-            name: Lint Dockerfiles
-            command: hadolint << parameters.path >>
+  lint-dockerfile:
+    description: lint Dockerfiles
+    parameters:
+      path:
+        description: Path to Dockerfile. Supports wildcards.
+        type: string
+        default: "*Dockerfile*"
+    steps:
+      - run:
+          name: Lint Dockerfiles
+          command: hadolint << parameters.path >>
