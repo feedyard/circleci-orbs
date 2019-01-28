@@ -95,3 +95,27 @@ commands:
                   echo "aws_access_key_id=<< parameters.aws-access-key-id >>" >>  ~/.aws/credentials
                   echo "aws_secret_access_key=<< parameters.aws-secret-access-key >>" >>  ~/.aws/credentials
                   echo "region=<< parameters.aws-region >>" >>  ~/.aws/credentials
+
+  lint-yaml:
+    description: lint yaml sources
+    parameters:
+      path:
+        description: Path to YAML sources. Supports wildcards.
+        type: string
+        default: .
+    steps:
+      - run:
+          name: Lint YAML sources
+          command: yamllint << parameters.path >>
+
+    lint-dockerfile:
+      description: lint Dockerfiles
+      parameters:
+        path:
+          description: Path to Dockerfile. Supports wildcards.
+          type: string
+          default: "*Dockerfile*"
+      steps:
+        - run:
+            name: Lint Dockerfiles
+            command: hadolint << parameters.path >>
