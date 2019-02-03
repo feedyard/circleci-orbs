@@ -2,12 +2,32 @@
 version: 2.1
 
 description: |
-  Feedyard terraform is an example set of commands and jobs for managing terraform infrastructure pipelines.
-  Orb source code - https://github.com/feedyard/circleci-orbs/blob/master/src/common-pipeline-tasks/orb.yaml
+  Feedyard/terraform is an example set of commands and jobs for managing terraform infrastructure pipelines.
+  Orb source code - https://github.com/feedyard/circleci-orbs/blob/master/src/terraform/orb.yaml
+  Jobs depend on feedyard/common-pipeline-tasks and feedyard circleci agent docker images.
 
 examples:
 
-  standard-terraform-pipeline:
+  terraform-module-pipeline:
+    description: |
+      Supports standard terraform module continuous integration workflow. Depends on feedyard/common-pipeline-tasks.
+    usage:
+      version: 2.1
+
+      orbs:
+        terraform: feedyard/terraform@0.0.1
+      workflows:
+        terraform-module-ci-pipeline:
+          - jobs:
+            - terraform/lint
+            - terraform/module:
+                aws-access-key-id: $AWS_ACCESS_KEY_ID
+                aws-secret-access-key: $AWS_SECRET_ACESS_KEY_ID
+                aws-region: $AWS_DEFAULT_REGION
+                env: ci
+
+
+  standard-terraform-release-pipeline:
     description: |
       Set of jobs that support the standard terraform pipeline workflow in an aws context. Assumes use of either
       awspec or inspec for aws configuration testing (default is awspec).
@@ -19,12 +39,48 @@ examples:
       workflows:
         terraform-pipeline:
           jobs:
+            - terraform/lint
+            - terraform/plan:
+                name: dev-test-plan
+                prefix: "mobile-bff"
+                account: "nonprod"
+                env: "dev"
+                aws-access-key-id: $AWS_ACCESS_KEY_ID
+                aws-secret-access-key: $AWS_SECRET_ACESS_KEY_ID
+                aws-role: $AWS_DEV_ROLE
+                aws-region: $AWS_DEFAULT_REGION
+                bucket-region: us-east-2
+                filters:
+                  branches:
+                    only: master
+                  tags:
+                    ignore: /.*/
+            - approve-dev-test-plan:
+                type: approval
+                requires:
+                  - dev-test-plan
+            - terraform/apply:
+                name: apply-dev-test-plan
+                prefix: "mobile-bff"
+                account: "nonprod"
+                env: "dev"
+                aws-access-key-id: $AWS_ACCESS_KEY_ID
+                aws-secret-access-key: $AWS_SECRET_ACESS_KEY_ID
+                aws-role: $AWS_DEV_ROLE
+                aws-region: $AWS_DEFAULT_REGION
+                bucket-region: us-east-2
+                requires:
+                  - approve-dev-test-plan
+            # tag to start release-candidate pipeline
             - terraform/plan:
                 name: qa-release-plan
-                prefix: "prefix name"
-                account: "account short name"
-                env: "env name"
-                region: us-east-1
+                prefix: "mobile-bff"
+                account: "nonprod"
+                env: "qa"
+                aws-access-key-id: $AWS_ACCESS_KEY_ID
+                aws-secret-access-key: $AWS_SECRET_ACESS_KEY_ID
+                aws-role: $AWS_DEV_ROLE
+                aws-region: $AWS_DEFAULT_REGION
                 bucket-region: us-east-2
                 filters:
                   branches:
@@ -33,24 +89,78 @@ examples:
                     only: /.*/
             - approve-qa-release-plan:
                 type: approval
+                filters:
+                  branches:
+                    ignore: /.*/
+                  tags:
+                    only: /.*/
                 requires:
                   - qa-release-plan
             - terraform/apply:
                 name: apply-qa-release-plan
-                prefix: "prefix name"
-                account: "account short name"
-                env: "env name"
-                region: us-east-1
+                prefix: "mobile-bff"
+                account: "nonprod"
+                env: "qa"
+                aws-access-key-id: $AWS_ACCESS_KEY_ID
+                aws-secret-access-key: $AWS_SECRET_ACESS_KEY_ID
+                aws-role: $AWS_DEV_ROLE
+                aws-region: $AWS_DEFAULT_REGION
                 bucket-region: us-east-2
+                filters:
+                  branches:
+                    ignore: /.*/
+                  tags:
+                    only: /.*/
                 requires:
                   - approve-qa-release-plan
+            - terraform/plan:
+                name: prod-release-plan
+                prefix: "mobile-bff"
+                account: "prod"
+                env: "prod"
+                aws-access-key-id: $AWS_ACCESS_KEY_ID
+                aws-secret-access-key: $AWS_SECRET_ACESS_KEY_ID
+                aws-role: $AWS_PROD_ROLE
+                aws-region: $AWS_DEFAULT_REGION
+                bucket-region: us-east-2
+                filters:
+                  branches:
+                    ignore: /.*/
+                  tags:
+                    only: /.*/
+            - approve-prod-release-plan:
+                type: approval
+                filters:
+                  branches:
+                    ignore: /.*/
+                  tags:
+                    only: /.*/
+                requires:
+                  - prod-release-plan
+            - terraform/apply:
+                name: apply-prod-release-plan
+                prefix: "mobile-bff"
+                account: "prod"
+                env: "prod"
+                aws-access-key-id: $AWS_ACCESS_KEY_ID
+                aws-secret-access-key: $AWS_SECRET_ACESS_KEY_ID
+                aws-role: $AWS_PROD_ROLE
+                aws-region: $AWS_DEFAULT_REGION
+                bucket-region: us-east-2
+                filters:
+                  branches:
+                    ignore: /.*/
+                  tags:
+                    only: /.*/
+                requires:
+                  - approve-prod-release-plan
 
 orbs:
   common-tasks: feedyard/common-pipeline-tasks@dev:latest
 
 executors:
 
-  circleci-infra-agent:
+  circleci-platform-agent:
     description: The circleci agent container to use when running aws infrastructure pipelines jobs
     docker:
       - image: quay.io/feedyard/circleci-platform-agent
@@ -60,23 +170,33 @@ executors:
 commands:
 
   setup-job:
-    description: prepare terraform job
+    description: prepare circleci job
     parameters:
       encryption-key:
         description: Encryption key (recommend 100 chars or more in random key gen)
         type: string
-        default: $GRAINGER_CIRCLECI_ENC
+        default: $FEEDYARD_CIRCLECI_ENC
+      encoded-file:
+        description: Name of encrypted file
+        type: string
+        default: env.ci
+      decoded-file:
+        description: Name of decrypted output file
+        type: string
+        default: local.env
     steps:
       - checkout
       - setup_remote_docker
       - common-tasks/decrypt-env:
           encryption-key: << parameters.encryption-key >>
+          encoded-file: << parameters.encoded-file >>
+          decoded-file: << parameters.decoded-file >>
 
 jobs:
 
   lint:
     description: validate terraform
-    executor: circleci-infra-agent
+    executor: circleci-platform-agent
     parameters:
       working-directory:
         description: specify a specific folder in which to run the commands
@@ -93,18 +213,93 @@ jobs:
           working_directory: << parameters.working-directory >>
           command: docker run --rm -v $(pwd) -t wata727/tflint --error-with-issues
 
+  module:
+    description: terraform module ci
+    executor: circleci-platform-agent
+    parameters:
+      working-directory:
+        description: specify a specific folder in which to run the commands
+        type: string
+        default: '~/project'
+      aws-access-key-id:
+        description: aws access key id
+        type: string
+        default: ''
+      aws-secret-access-key:
+        description: aws secret access key
+        type: string
+        default: ''
+      aws-region:
+        description: aws region provisioned and tested
+        type: string
+        default: ''
+      aws-role:
+        description: assume aws role
+        type: string
+        default: ''
+      env:
+        description: infrastructure environment name
+        type: string
+        default: ''
+      inspec:
+        description: aws testing framework to use in performing the test
+        type: boolean
+        default: false
+    steps:
+      - setup-job
+      - run:
+          name: confirm Docker health
+          command: docker info
+      - common-tasks/setup-aws-credentials:
+          aws-access-key-id: << parameters.aws-access-key-id >>
+          aws-secret-access-key: << parameters.aws-secret-access-key >>
+          aws-role: << parameters.aws-role >>
+          aws-region: << parameters.aws-region >>
+      - run:
+          name: provision instance of module to sandbox account
+          working_directory: test/fixture
+          command: |
+            terraform init
+            terraform apply -var-file=ci.json -auto-approve
+      - when:
+          name: use inspec framework
+          condition: << parameters.inspec >>
+          steps:
+            - run:
+                name: use inspec to validate aws configuration
+                working_directory: << parameters.working-directory >>
+                environment:
+                  PLATFORM_ENV: << parameters.env >>
+                command: inspec exec test/integration/ -t aws://
+      - unless:
+          name: use awspec framework
+          condition: << parameters.inspec >>
+          steps:
+            - run:
+                name: use awspec to validate aws configuration
+                working_directory: << parameters.working-directory >>
+                environment:
+                  PLATFORM_ENV: << parameters.env >>
+                  AWS_REGION: << parameters.aws-region >>
+                command: rspec test/integration/
+      - run:
+          name: destroy aws resources
+          working_directory: test/fixture
+          command: terraform destroy -var-file=ci.json -auto-approve
+          when: always
+
   plan:
     description: Run terraform plan for << parameters.env >>
-    executor: circleci-infra-agent
+    executor: circleci-platform-agent
     parameters:
       prefix:
         description: prefix used to identify product or team managing the infrastructure
         type: string
-        default: $PREFIX
+        default: ''
       account:
         description: s3 bucket name
         type: string
-        default: $DEFAULT_ACCOUNT
+        default: ''
       pipeline:
         description: by convention, state info for an infrastructure pipeline is named as the repo containing the pipeline code
         type: string
@@ -112,7 +307,7 @@ jobs:
       env:
         description: infrastructure environment name
         type: string
-        default: $DEFAULT_ENV
+        default: ''
       statefile:
         description: by convention, state files are named terraform
         type: string
@@ -120,15 +315,15 @@ jobs:
       aws-access-key-id:
         description: aws access key id
         type: string
-        default: $AWS_ACCESS_KEY_ID
+        default: ''
       aws-secret-access-key:
         description: aws secret access key
         type: string
-        default: $AWS_SECRET_ACCESS_KEY
+        default: ''
       aws-region:
         description: aws region provisioned and tested
         type: string
-        default: $AWS_REGION
+        default: ''
       aws-role:
         description: assume aws role
         type: string
@@ -136,7 +331,7 @@ jobs:
       bucket-region:
         description: aws region of terrafrom state s3 bucket
         type: string
-        default: $BUCKET_REGION
+        default: ''
       working-directory:
         description: specify a specific folder in which to run the commands
         type: string
@@ -175,16 +370,16 @@ jobs:
 
   apply:
     description: Run terraform apply for << parameters.env >>
-    executor: circleci-infra-agent
+    executor: circleci-platform-agent
     parameters:
       prefix:
         description: prefix used to identify product or team managing the infrastructure
         type: string
-        default: $PREFIX
+        default: ''
       account:
         description: s3 bucket name
         type: string
-        default: $DEFAULT_ACCOUNT
+        default: ''
       pipeline:
         description: by convention, state info for an infrastructure pipeline is named as the repo containing the pipeline code
         type: string
@@ -192,7 +387,7 @@ jobs:
       env:
         description: infrastructure environment name
         type: string
-        default: $DEFAULT_ENV
+        default: ''
       statefile:
         description: by convention, state files are named terraform
         type: string
@@ -200,15 +395,15 @@ jobs:
       aws-access-key-id:
         description: aws access key id
         type: string
-        default: $AWS_ACCESS_KEY_ID
+        default: ''
       aws-secret-access-key:
         description: aws secret access key
         type: string
-        default: $AWS_SECRET_ACCESS_KEY
+        default: ''
       aws-region:
         description: aws region provisioned and tested
         type: string
-        default: $AWS_REGION
+        default: ''
       aws-role:
         description: assume aws role
         type: string
@@ -216,7 +411,7 @@ jobs:
       bucket-region:
         description: aws region of terrafrom state s3 bucket
         type: string
-        default: $BUCKET_REGION
+        default: ''
       inspec:
         description: aws testing framework to use in performing the test
         type: boolean
@@ -280,16 +475,16 @@ jobs:
 
   destroy:
     description: Run terraform destroy for << parameters.env >>
-    executor: circleci-infra-agent
+    executor: circleci-platform-agent
     parameters:
       prefix:
         description: prefix used to identify product or team managing the infrastructure
         type: string
-        default: $PREFIX
+        default: ''
       account:
         description: s3 bucket name
         type: string
-        default: $DEFAULT_ACCOUNT
+        default: ''
       pipeline:
         description: by convention, state info for an infrastructure pipeline is named as the repo containing the pipeline code
         type: string
@@ -297,7 +492,7 @@ jobs:
       env:
         description: infrastructure environment name
         type: string
-        default: $DEFAULT_ENV
+        default: ''
       statefile:
         description: by convention, state files are named terraform
         type: string
@@ -305,15 +500,15 @@ jobs:
       aws-access-key-id:
         description: aws access key id
         type: string
-        default: $AWS_ACCESS_KEY_ID
+        default: ''
       aws-secret-access-key:
         description: aws secret access key
         type: string
-        default: $AWS_SECRET_ACCESS_KEY
+        default: ''
       aws-region:
         description: aws region provisioned and tested
         type: string
-        default: $AWS_REGION
+        default: ''
       aws-role:
         description: assume aws role
         type: string
@@ -321,7 +516,7 @@ jobs:
       bucket-region:
         description: aws region of terrafrom state s3 bucket
         type: string
-        default: $BUCKET_REGION
+        default: ''
       working-directory:
         description: specify a specific folder in which to run the commands
         type: string
