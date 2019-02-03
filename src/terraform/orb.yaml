@@ -20,7 +20,7 @@ examples:
         terraform-module-ci-pipeline:
           jobs:
             - terraform/lint
-            - terraform/module:
+            - terraform/module-ci:
                 aws-access-key-id: $AWS_ACCESS_KEY_ID
                 aws-secret-access-key: $AWS_SECRET_ACESS_KEY_ID
                 aws-region: $AWS_DEFAULT_REGION
@@ -213,7 +213,7 @@ jobs:
           working_directory: << parameters.working-directory >>
           command: docker run --rm -v $(pwd) -t wata727/tflint --error-with-issues
 
-  module:
+  module-ci:
     description: terraform module ci
     executor: circleci-platform-agent
     parameters:
