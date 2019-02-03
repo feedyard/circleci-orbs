@@ -240,7 +240,7 @@ jobs:
       env:
         description: infrastructure environment name
         type: string
-        default: ''
+        default: 'ci'
       inspec:
         description: aws testing framework to use in performing the test
         type: boolean
