@@ -18,7 +18,7 @@ examples:
         terraform: feedyard/terraform@0.0.1
       workflows:
         terraform-module-ci-pipeline:
-          - jobs:
+          jobs:
             - terraform/lint
             - terraform/module:
                 aws-access-key-id: $AWS_ACCESS_KEY_ID
