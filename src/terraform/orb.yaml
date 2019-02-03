@@ -220,7 +220,7 @@ jobs:
       working-directory:
         description: specify a specific folder in which to run the commands
         type: string
-        default: '~/project/test/fixture'
+        default: ''
       aws-access-key-id:
         description: aws access key id
         type: string
@@ -241,10 +241,14 @@ jobs:
         description: infrastructure environment name
         type: string
         default: 'ci'
-      inspec:
-        description: aws testing framework to use in performing the test
-        type: boolean
-        default: false
+      before-terraform:
+        description: Optional steps to run before running terraform module ci.
+        type: steps
+        default: []
+      after-terraform:
+        description: Optional steps to run after running terraform module ci..
+        type: steps
+        default: []
     steps:
       - setup-job
       - run:
@@ -255,6 +259,10 @@ jobs:
           aws-secret-access-key: << parameters.aws-secret-access-key >>
           aws-role: << parameters.aws-role >>
           aws-region: << parameters.aws-region >>
+      - when:
+          name: Run before terraform module ci lifecycle hook steps
+          condition: << parameters.before-terraform >>
+          steps: << parameters.before-terraform >>
       - run:
           name: provision instance of module to sandbox account
           working_directory: << parameters.working-directory >>
@@ -262,29 +270,12 @@ jobs:
             terraform init
             terraform apply -var-file=ci.json -auto-approve
       - when:
-          name: use inspec framework
-          condition: << parameters.inspec >>
-          steps:
-            - run:
-                name: use inspec to validate aws configuration
-                working_directory: << parameters.working-directory >>
-                environment:
-                  PLATFORM_ENV: << parameters.env >>
-                command: inspec exec ../test/integration/ -t aws://
-      - unless:
-          name: use awspec framework
-          condition: << parameters.inspec >>
-          steps:
-            - run:
-                name: use awspec to validate aws configuration
-                working_directory: << parameters.working-directory >>
-                environment:
-                  PLATFORM_ENV: << parameters.env >>
-                  AWS_REGION: << parameters.aws-region >>
-                command: rspec ../test/integration/
+          name: Run after terraform module ci lifecycle hook steps
+          condition: << parameters.after-terraform >>
+          steps: << parameters.after-terraform >>
       - run:
           name: destroy aws resources
-          working_directory: test/fixture
+          working_directory: << parameters.working-directory >>
           command: terraform destroy -var-file=ci.json -auto-approve
           when: always
 
