@@ -270,7 +270,7 @@ jobs:
                 working_directory: << parameters.working-directory >>
                 environment:
                   PLATFORM_ENV: << parameters.env >>
-                command: inspec exec test/integration/ -t aws://
+                command: inspec exec ../test/integration/ -t aws://
       - unless:
           name: use awspec framework
           condition: << parameters.inspec >>
@@ -281,7 +281,7 @@ jobs:
                 environment:
                   PLATFORM_ENV: << parameters.env >>
                   AWS_REGION: << parameters.aws-region >>
-                command: rspec test/integration/
+                command: rspec ../test/integration/
       - run:
           name: destroy aws resources
           working_directory: test/fixture
