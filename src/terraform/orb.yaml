@@ -220,7 +220,7 @@ jobs:
       working-directory:
         description: specify a specific folder in which to run the commands
         type: string
-        default: '~/project'
+        default: '~/project/test/fixture'
       aws-access-key-id:
         description: aws access key id
         type: string
@@ -257,7 +257,7 @@ jobs:
           aws-region: << parameters.aws-region >>
       - run:
           name: provision instance of module to sandbox account
-          working_directory: test/fixture
+          working_directory: << parameters.working-directory >>
           command: |
             terraform init
             terraform apply -var-file=ci.json -auto-approve
