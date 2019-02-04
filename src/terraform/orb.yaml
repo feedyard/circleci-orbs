@@ -274,8 +274,8 @@ jobs:
             terraform init
             terraform apply -var-file=<< parameters.env >>.json -auto-approve
       - run:
-          when: on_success
           name: integration tests of deployed fixture
+          condition: << parameters.integration-tests >>
           steps: << parameters.integration-tests >>
       - run:
           name: destroy aws resources
