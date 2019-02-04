@@ -272,7 +272,7 @@ jobs:
           working_directory: << parameters.working-directory >>
           command: |
             terraform init
-            terraform apply -var-file=ci.json -auto-approve
+            terraform apply -var-file=<< parameters.env >>.json -auto-approve
       - run:
           when: on_success
           name: integration tests of deployed fixture
@@ -280,8 +280,7 @@ jobs:
       - run:
           name: destroy aws resources
           working_directory: << parameters.working-directory >>
-          command: terraform destroy -var-file=ci.json -auto-approve
-          when: always
+          command: terraform destroy -var-file=<< parameters.env >>.json -auto-approve
       - when:
           name: Run after terraform module ci lifecycle hook steps
           condition: << parameters.after-terraform >>
