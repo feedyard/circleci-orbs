@@ -273,7 +273,7 @@ jobs:
           command: |
             terraform init
             terraform apply -var-file=<< parameters.env >>.json -auto-approve
-      - run:
+      - when:
           name: integration tests of deployed fixture
           condition: << parameters.integration-tests >>
           steps: << parameters.integration-tests >>
