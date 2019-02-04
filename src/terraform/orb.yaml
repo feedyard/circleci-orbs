@@ -241,6 +241,10 @@ jobs:
         description: infrastructure environment name
         type: string
         default: 'ci'
+      integration-tests:
+        description: steps to perform tests of deployed fixture
+        ty[e: steps
+        default: []
       before-terraform:
         description: Optional steps to run before running terraform module ci.
         type: steps
@@ -269,15 +273,18 @@ jobs:
           command: |
             terraform init
             terraform apply -var-file=ci.json -auto-approve
-      - when:
-          name: Run after terraform module ci lifecycle hook steps
-          condition: << parameters.after-terraform >>
-          steps: << parameters.after-terraform >>
+      - run:
+          name: integration tests of deployed fixture
+          steps: << parameters.integration-tests >>
       - run:
           name: destroy aws resources
           working_directory: << parameters.working-directory >>
           command: terraform destroy -var-file=ci.json -auto-approve
           when: always
+      - when:
+          name: Run after terraform module ci lifecycle hook steps
+          condition: << parameters.after-terraform >>
+          steps: << parameters.after-terraform >>
 
   plan:
     description: Run terraform plan for << parameters.env >>
