@@ -243,7 +243,7 @@ jobs:
         default: 'ci'
       integration-tests:
         description: steps to perform tests of deployed fixture
-        ty[e: steps
+        type: steps
         default: []
       before-terraform:
         description: Optional steps to run before running terraform module ci.
