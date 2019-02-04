@@ -274,6 +274,7 @@ jobs:
             terraform init
             terraform apply -var-file=ci.json -auto-approve
       - run:
+          when: on_success
           name: integration tests of deployed fixture
           steps: << parameters.integration-tests >>
       - run:
