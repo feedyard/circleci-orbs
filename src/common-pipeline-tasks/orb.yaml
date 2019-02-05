@@ -52,15 +52,15 @@ commands:
       aws-access-key-id:
         description: aws access key id
         type: string
-        default: $AWS_ACCESS_KEY_ID
+        default: ''
       aws-secret-access-key:
         description: aws secret access key
         type: string
-        default: $AWS_SECRET_ACCESS_KEY
+        default: ''
       aws-region:
         description: default aws region
         type: string
-        default: $AWS_REGION
+        default: ''
       aws-role:
         description: assume aws role
         type: string
