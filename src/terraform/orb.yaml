@@ -213,79 +213,6 @@ jobs:
           working_directory: << parameters.working-directory >>
           command: docker run --rm -v $(pwd) -t wata727/tflint --error-with-issues
 
-  module-ci:
-    description: terraform module ci
-    executor: circleci-platform-agent
-    parameters:
-      working-directory:
-        description: specify a specific folder in which to run the commands
-        type: string
-        default: ''
-      aws-access-key-id:
-        description: aws access key id
-        type: string
-        default: ''
-      aws-secret-access-key:
-        description: aws secret access key
-        type: string
-        default: ''
-      aws-region:
-        description: aws region provisioned and tested
-        type: string
-        default: ''
-      aws-role:
-        description: assume aws role
-        type: string
-        default: ''
-      env:
-        description: infrastructure environment name
-        type: string
-        default: 'ci'
-      integration-tests:
-        description: steps to perform tests of deployed fixture
-        type: steps
-        default: []
-      before-terraform:
-        description: Optional steps to run before running terraform module ci.
-        type: steps
-        default: []
-      after-terraform:
-        description: Optional steps to run after running terraform module ci..
-        type: steps
-        default: []
-    steps:
-      - setup-job
-      - run:
-          name: confirm Docker health
-          command: docker info
-      - common-tasks/setup-aws-credentials:
-          aws-access-key-id: << parameters.aws-access-key-id >>
-          aws-secret-access-key: << parameters.aws-secret-access-key >>
-          aws-role: << parameters.aws-role >>
-          aws-region: << parameters.aws-region >>
-      - when:
-          name: Run before terraform module ci lifecycle hook steps
-          condition: << parameters.before-terraform >>
-          steps: << parameters.before-terraform >>
-      - run:
-          name: provision instance of module to sandbox account
-          working_directory: << parameters.working-directory >>
-          command: |
-            terraform init
-            terraform apply -var-file=<< parameters.env >>.json -auto-approve
-      - when:
-          name: integration tests of deployed fixture
-          condition: << parameters.integration-tests >>
-          steps: << parameters.integration-tests >>
-      - run:
-          name: destroy aws resources
-          working_directory: << parameters.working-directory >>
-          command: terraform destroy -var-file=<< parameters.env >>.json -auto-approve
-      - when:
-          name: Run after terraform module ci lifecycle hook steps
-          condition: << parameters.after-terraform >>
-          steps: << parameters.after-terraform >>
-
   plan:
     description: Run terraform plan for << parameters.env >>
     executor: circleci-platform-agent
@@ -410,14 +337,14 @@ jobs:
         description: aws region of terrafrom state s3 bucket
         type: string
         default: ''
-      inspec:
-        description: aws testing framework to use in performing the test
-        type: boolean
-        default: false
       working-directory:
         description: specify a specific folder in which to run the commands
         type: string
         default: '~/project'
+      integration-tests:
+        description: test aws configuration
+        type: steps
+        default: []
       before-terraform:
         description: Optional steps to run before running terraform apply.
         type: steps
@@ -446,30 +373,13 @@ jobs:
           working_directory: << parameters.working-directory >>
           command: terraform apply -var-file="<< parameters.env >>.json" -auto-approve
       - when:
+          name: test aws configuration
+          condition: << parameters.integration-tests >>
+          steps: << parameters.integration-tests >>
+      - when:
           name: Run after-terraform lifecycle hook steps
           condition: << parameters.after-terraform >>
           steps: << parameters.after-terraform >>
-      - when:
-          name: use inspec framework
-          condition: << parameters.inspec >>
-          steps:
-            - run:
-                name: use inspec to validate aws configuration
-                working_directory: << parameters.working-directory >>
-                environment:
-                  PLATFORM_ENV: << parameters.env >>
-                command: inspec exec test/integration/ -t aws://
-      - unless:
-          name: use awspec framework
-          condition: << parameters.inspec >>
-          steps:
-            - run:
-                name: use awspec to validate aws configuration
-                working_directory: << parameters.working-directory >>
-                environment:
-                  PLATFORM_ENV: << parameters.env >>
-                  AWS_REGION: << parameters.aws-region >>
-                command: rspec test/integration/
 
   destroy:
     description: Run terraform destroy for << parameters.env >>
