@@ -44,7 +44,7 @@ commands:
     steps:
       - run:
           name: decrypt local file
-          command: openssl aes-256-cbc -d -in << parameters.encoded-file >> -out << parameters.decoded-file >> -k <<parameters.encryption-key >>
+          command: openssl aes-256-cbc -d -in << parameters.encoded-file >> -out << parameters.decoded-file >> -k <<parameters.encryption-key >> -pbkdf2
 
   setup-aws-credentials:
     description: Setup default ~/.aws style credentials
