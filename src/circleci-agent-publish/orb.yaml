@@ -220,6 +220,7 @@ jobs:
       - run:
           name: version-tag for private registry
           command: |
+            docker pull << parameters.registry >>/<< parameters.image >>:<< parameters.pull-tag >>
             docker tag << parameters.registry >>/<< parameters.image >>:<< parameters.pull-tag >> << parameters.registry >>/<< parameters.image >>:latest
             docker tag << parameters.registry >>/<< parameters.image >>:<< parameters.pull-tag >> << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
       - when:
