@@ -232,7 +232,6 @@ jobs:
           tag: << parameters.tag >>
       - run:
           name: push image to registry
-          condition: << parameters.registry >>
           command: |
             docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
             docker push << parameters.registry >>/<< parameters.image >>:latest
