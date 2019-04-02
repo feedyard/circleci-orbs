@@ -226,10 +226,6 @@ jobs:
           name: Run after_tag lifecycle hook steps.
           condition: << parameters.after_tag >>
           steps: << parameters.after_tag >>
-      - deploy:
-          registry: << parameters.registry >>
-          image: << parameters.image >>
-          tag: << parameters.tag >>
       - run:
           name: push image to registry
           command: |
