@@ -70,7 +70,7 @@ examples:
                       command: |
                         set -euo pipefail
                         inspec exec --no-distinct-exit profiles/cis-docker
-                        CID="$(docker run -it -d --entrypoint bash << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>)"
+                        CID="$(docker run -it -d --entrypoint bash quay.io/feedyard/circleci-remote-docker:$CIRCLE_SHA1)"
                         inspec exec profiles/circleci-remote-docker/ -t docker://$CID
                         docker rm -f $CID
 
@@ -106,7 +106,7 @@ commands:
               exit 1
             fi
       - run:
-          name: Docker Login
+          name: Confirm Docker registry login
           command: echo "$DOCKER_PASSWORD" | docker login -u $DOCKER_LOGIN --password-stdin << parameters.registry >>
 
 jobs:
@@ -161,7 +161,7 @@ jobs:
           condition: << parameters.before_build >>
           steps: << parameters.before_build >>
       - run:
-          name: use private registry
+          name: Docker build
           command: docker build -f << parameters.dockerfile >> -t << parameters.registry >>/<< parameters.image >>:<< parameters.tag >> << parameters.path >>
       - when:
           name: Run after_build lifecycle hook steps.
@@ -218,7 +218,7 @@ jobs:
           condition: << parameters.before_tag >>
           steps: << parameters.before_tag >>
       - run:
-          name: version-tag for private registry
+          name: Tag :version-tag and :latest
           command: |
             docker pull << parameters.registry >>/<< parameters.image >>:<< parameters.pull-tag >>
             docker tag << parameters.registry >>/<< parameters.image >>:<< parameters.pull-tag >> << parameters.registry >>/<< parameters.image >>:latest
@@ -228,7 +228,7 @@ jobs:
           condition: << parameters.after_tag >>
           steps: << parameters.after_tag >>
       - run:
-          name: push image to registry
+          name: Publish :version to registry
           command: |
             docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
             docker push << parameters.registry >>/<< parameters.image >>:latest
